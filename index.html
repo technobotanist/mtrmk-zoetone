@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Audio Visualizer</title>
+    <meta name="description" content="Audio Visualizer">
+<!--   This is a series of components and plugins used -->
+<!-- AFrame webXR Library   -->
+<script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+
+<!--Buttons and other event system uses event-set component and proxy events -->
+<script src="https://unpkg.com/aframe-event-set-component@^4.0.0/dist/aframe-event-set-component.min.js"></script> 
+    
+<!--   The layout of buttons utilizes layout component and text positioning uses look-at-->
+<script src="https://unpkg.com/aframe-layout-component@4.3.1/dist/aframe-layout-component.min.js"></script> 
+<script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script> 
+
+<!-- troika text component allows branded fonts -->
+<script src="https://unpkg.com/aframe-troika-text/dist/aframe-troika-text.min.js"></script>
+    
+<!--     Local scripts -->
+    <script src="./playtracks.js"></script>
+    <script src="./aframe-audioanalyser-component.js"></script> 
+    <script src="./audio-level-scale-component.js"></script>
+    <script src="./audio-ring-on-beat.js"></script>
+    <script src="./audio-ring-on-beat2.js"></script>
+    <script src="./frequency-spectum-component.js"></script>
+    <script src="./spectrogram-component.js"></script>
+    <script src="./proxy-event.js"></script>
+    <script src="./info-message.js"></script>
+    <script src="./audio-light-on-beat.js"></script>
+    <script src="shader-grid-glitch.js"></script>
+    <script src="shader-hologram.js"></script>
+    
+</head>
+<body>
+  
+    <a-scene
+      info-message="htmlSrc: #messageText">
+
+      <a-assets>
+ 
+<!--Load your 6 audio tracks -->
+<audio id="lane1" class="music1" src="https://cdn.glitch.com/b0549471-c315-468a-a311-ae093a717da9%2FLDlane1_kastelheimer.mp3?v=1620793707559" preload="auto"></audio>
+<audio id="lane2" class="music2" src="https://cdn.glitch.com/767fd2d2-6ae7-43b7-80fe-ef9da2ecdcbc%2FLDlane2_drums.mp3?v=1620345794733" preload="auto"></audio>
+<audio id="lane3" class="music3" src="https://cdn.glitch.com/767fd2d2-6ae7-43b7-80fe-ef9da2ecdcbc%2FLDlane3leadsynth.mp3?v=1620345794715" preload="auto"></audio>
+<audio id="lane4" class="music4" src="https://cdn.glitch.com/767fd2d2-6ae7-43b7-80fe-ef9da2ecdcbc%2FLDlane4backingOrgan.mp3?v=1620345794676" preload="auto"></audio> 
+<audio id="lane5" class="music5" src="https://cdn.glitch.com/767fd2d2-6ae7-43b7-80fe-ef9da2ecdcbc%2FLDlane5wailsynth.mp3?v=1620345794392" preload="auto"></audio> 
+<audio id="lane6" class="music6" src="https://cdn.glitch.com/767fd2d2-6ae7-43b7-80fe-ef9da2ecdcbc%2FLDlane6midgroundsynth.mp3?v=1620345794703" preload="auto"></audio>
+
+<!--Brand 3 Models -->        
+<a-asset-item id="magickey" src="https://cdn.glitch.com/b0549471-c315-468a-a311-ae093a717da9%2FMTRMagicKeyTrueOrigin.gltf?v=1622998715044" preload="auto"></a-asset-item>
+<a-asset-item id="whitemagickeytext" src="https://cdn.glitch.com/b0549471-c315-468a-a311-ae093a717da9%2FWhiteMTRMagicKeyText.glb?v=1622588033910" preload="auto"></a-asset-item>
+<a-asset-item id="silvermagickeytext" src="https://cdn.glitch.com/b0549471-c315-468a-a311-ae093a717da9%2FSilverMTRMagicKeyText.glb?v=1622588033811" preload="auto"></a-asset-item>
+<a-asset-item id="goldmagickeytext" src="https://cdn.glitch.com/b0549471-c315-468a-a311-ae093a717da9%2FGoldMTRMagicKeyText.glb?v=1622588033726" preload="auto"></a-asset-item>
+<a-asset-item id="pinkmagickeytext" src="https://cdn.glitch.com/b0549471-c315-468a-a311-ae093a717da9%2FPinkMTRMagicKeyText.glb?v=1622588033929" preload="auto"></a-asset-item>
+<a-asset-item id="bluemagickeytext" src="https://cdn.glitch.com/b0549471-c315-468a-a311-ae093a717da9%2FBlueMTRMagicKeyText.glb?v=1622588033626" preload="auto"></a-asset-item>
+<a-asset-item id="greenmagickeytext" src="https://cdn.glitch.com/b0549471-c315-468a-a311-ae093a717da9%2FGreenMTRMagicKeyText.glb?v=1622588033748" preload="auto"></a-asset-item>
+
+<!-- Text for bottom right corner pop up -->
+<a-asset-item id="messageText" src="message.html"></a-asset-item>
+ 
+<!--TR Magic Key Brand Fonts -->
+<a-asset-item id="magickeytitlingfont" src="https://cdn.glitch.com/b0549471-c315-468a-a311-ae093a717da9%2FMagicKeyTitlingFont.ttf?v=1620941414708"></a-asset-item>
+
+ <a-mixin   
+          id="splashaway"
+                    event-set__splashaway1= "
+                _event : click;
+                _target : #startprompt;
+                animation.property : position;
+                animation.to: 0 106.5 -15         ;"
+          ></a-mixin>
+        
+   <a-mixin   
+          id="magickeywhitetextaway"
+          event-set__whitetextaway= "
+                _event : click;
+                _target : #whitemagickey;
+                animation.property : visible;
+                animation.to: false;"
+          ></a-mixin>
+           <a-mixin   
+          id="magickeysilvertextaway"
+          event-set__silvertextaway= "
+                _event : click;
+                _target : #silvermagickey;
+                animation.property : visible;
+                animation.to: false;"
+          ></a-mixin>
+           <a-mixin   
+          id="magickeygoldtextaway"
+          event-set__goldtextaway= "
+                _event : click;
+                _target : #goldmagickey;
+                animation.property : visible;
+                animation.to: false;"
+          ></a-mixin>
+           <a-mixin   
+          id="magickeypinktextaway"
+          event-set__pinktextaway= "
+                _event : click;
+                _target : #pinkmagickey;
+                animation.property : visible;
+                animation.to: false;"
+          ></a-mixin>
+           <a-mixin   
+          id="magickeybluetextaway"
+          event-set__bluetextaway= "
+                _event : click;
+                _target : #bluemagickey;
+                animation.property : visible;
+                animation.to: false;"
+          ></a-mixin>
+           <a-mixin   
+          id="magickeygreentextaway"
+          event-set__greentextaway= "
+                _event : click;
+                _target : #greenmagickey;
+                animation.property : visible;
+                animation.to: false;"
+          ></a-mixin>
+   
+
+  
+      </a-assets>
+ 
+      <a-entity 
+                position="-5 0 0"
+                light="intensity: 1; type: point; castShadow: true" rotation=""
+                light-on-beat="analyserEl: #white"
+></a-entity>
+      
+    
+      <a-entity id="rig" position="0 0 0" rotation="0 0 0" >
+    <a-entity id="eyes"
+              camera="fov: 80"
+              look-controls="enabled:  false;  mouseEnabled:  false"
+              position=""
+              rotation=""
+              raycaster="objects: .mouse; direction: -24 -3 0;" cursor="rayOrigin: mouse"
+              static-body="shape: sphere; sphereRadius: 0.001">
+      </a-entity>
+    </a-entity>  
+      
+      <a-entity id="responsivetext">
+      <a-entity id="whitemagickey"
+          visible="false"
+          rotation="" 
+          position="0 20 -40"
+          gltf-model="#whitemagickeytext" 
+          scale="15 15 15"
+          light-on-beat="analyserEl: #White"
+          light="color: #ffffff; groundColor: #ffffff; intensity: 1; type: point; castShadow: true"
+></a-entity>
+        <a-entity id="silvermagickey" 
+          visible="false"
+          rotation="" 
+          position="0 20 -40"
+          gltf-model="#silvermagickeytext" 
+          scale="15 15 15"
+          light-on-beat="analyserEl: #Silver"
+          light="color: #8c8c8c; groundColor: #8c8c8c; intensity: 1; type: point; castShadow: true"
+></a-entity>
+        <a-entity id="goldmagickey" 
+          visible="false"
+          rotation="" 
+          position="0 20 -40"
+          gltf-model="#goldmagickeytext" 
+          scale="15 15 15"
+          light-on-beat="analyserEl: #Gold"
+          light="color: #f9dea2; groundColor: #f9dea2; intensity: 1; type: point; castShadow: true"
+></a-entity>
+        <a-entity id="pinkmagickey" 
+          visible="false"
+          rotation="" 
+          position="0 20 -40"
+          gltf-model="#pinkmagickeytext" 
+          scale="15 15 15"
+          light-on-beat="analyserEl: #Pink"
+          light="color: #df7592; groundColor: #df7592; intensity: 1; type: point; castShadow: true"
+></a-entity>
+        <a-entity id="bluemagickey"
+          visible="false"
+          rotation="" 
+          position="0 20 -40"
+          gltf-model="#bluemagickeytext" 
+          scale="15 15 15"
+          light-on-beat="analyserEl: #Blue"
+          light="color: #1ebcb8; groundColor: #1ebcb8; intensity: 1; type: point; castShadow: true"
+></a-entity>
+                <a-entity id="greenmagickey"
+          visible="false"
+          rotation="" 
+          position="0 20 -40"
+          gltf-model="#greenmagickeytext" 
+          scale="15 15 15"
+          light-on-beat="analyserEl: #Green"
+          light="color: #48bc1e; groundColor: #48bc1e; intensity: 1; type: point; castShadow: true"
+></a-entity>
+      
+      </a-entity>
+      
+      
+      <a-entity id="zoetonecomplex" 
+                animation__pt1="property: rotation;dir: alternate; from: 0 0 0; to: 0 0 90; loop: true; dur: 30000;startEvents: click"
+                animation__pt1a="property: rotation;dir: alternate; from: 0 0 90; to: 0 0 -90; loop: true; dur: 60000;delay: 30000;startEvents: click"
+                animation__pt2="property: position;dir: alternate; from: 0 0 0; to: 0 0 -30; loop: true; dur: 60000;startEvents: click"
+                animation__pt3="property: scale;dir: alternate; from: 1 1 1;to: 8 8 8; loop: true; dur: 6000;startEvents: click">
+<a-entity 
+          id="startprompt"
+          playtracks="" 
+          mixin="splashaway"
+          troika-text="value:
+MTR Magic Key                  
+   
+  
+                       
+                       
+Raleigh, NC; 
+                       align: center; 
+                       color: #f9dea2; 
+                       font: https://cdn.glitch.com/b0549471-c315-468a-a311-ae093a717da9%2FMagicKeyTitlingFont.ttf?v=1620941414708; 
+                       fontSize: 3; fillOpacity:  0.5;  
+                       outlineBlur:  0.34;  outlineColor:  #8c8c8c;  outlineOpacity:  0.64;  outlineWidth:  0.02;  
+                       strokeColor:  #f9dea2;  strokeOpacity:  4.01;  strokeWidth:  0.05"
+          position="0 3.5 -15"
+          ></a-entity>
+      
+      <a-entity id="playbuttonkey" 
+                rotation="49.8 125.5 128" 
+                position="-2.25 1 -16"
+                gltf-model="#magickey"
+                scale=".5 .5 .5"
+                mixin="splashaway"
+                playtracks=""
+                class="mouse"
+    ></a-entity>
+        
+
+      
+      
+   <a-sky id="sky" material="color: #2b2622" geometry="radius: 1000"></a-sky>
+
+      <a-entity id="zoetonehome"
+            scale="1 1 1" position="-1 0 -15" rotation="0 0 0"
+            class="mouse">
+            <a-entity 
+                    id="Silver"
+                    position="-3 0 0" 
+                    geometry="primitive: sphere"
+                      material="color:  #8c8c8c;  metalness:  0.5; emissive:  #8c8c8c;  emissiveIntensity:  0.6; roughness:  0.75; wireframe:  true"
+                     class="mouse"
+                      audioanalyser="src: #lane1; beatDetectionDecay: 0.99,
+    beatDetectionMinVolume: 15; enableBeatDetection: true"
+                    audio-level-scale="positionScale: 1 20 1"
+                    mixin="magickeywhitetextaway magickeygoldtextaway magickeypinktextaway magickeybluetextaway magickeygreentextaway splashaway"
+               event-set__textcallsilver= "
+                _event : click;
+                _target : #silvermagickey;
+                animation.property : visible;
+                animation.to: true;"
+           ></a-entity>
+            <a-entity 
+                    id="Blue" 
+                    position="3 0 0" 
+                    geometry="primitive: sphere"
+                      material="color:  #1ebcb8;  metalness:  0.5; emissive:  #1ebcb8;  emissiveIntensity:  0.6; roughness:  0.75; wireframe:  true"
+                    class="mouse"
+                    audioanalyser="src: #lane2; beatDetectionDecay: 0.99,
+    beatDetectionMinVolume: 15; enableBeatDetection: true"
+                    audio-level-scale="positionScale: 1 20 1"
+                    mixin="magickeywhitetextaway magickeysilvertextaway magickeygoldtextaway magickeypinktextaway magickeygreentextaway splashaway"
+                    ring-on-beat="analyserEl: #Blue"
+               event-set__textcallblue= "
+                _event : click;
+                _target : #bluemagickey;
+                animation.property : visible;
+                animation.to: true;"
+ ></a-entity>
+            <a-entity 
+                      id="Gold" 
+                    position="-1.5 0" 
+                    geometry="primitive: sphere"
+                      material="color:  #f9dea2;  metalness:  0.5; emissive:  #f9dea2;  emissiveIntensity:  0.6; roughness:  0.75; wireframe:  true"
+                    class="mouse"
+                      audioanalyser="src: #lane3; beatDetectionDecay: 0.90,
+    beatDetectionMinVolume: 5; enableBeatDetection: true"
+                      ring-on-beat2="analyserEl: #Gold"
+                    audio-level-scale="positionScale: 1 40 1"
+                    mixin="magickeywhitetextaway magickeysilvertextaway magickeypinktextaway magickeybluetextaway magickeygreentextaway splashaway"
+                      event-set__textcallgold= "
+                _event : click;
+                _target : #goldmagickey;
+                animation.property : visible;
+                animation.to: true;"
+></a-entity>
+            <a-entity 
+                      id="Pink" 
+                      position="1.5 0 0"
+                      geometry="primitive: sphere" 
+                      material="color:  #df7592;  metalness:  0.5; emissive:  #df7592;  emissiveIntensity:  0.6; roughness:  0.75; wireframe:  true"
+                      class="mouse"
+                      audioanalyser="src: #lane4; beatDetectionDecay: 0.90,
+    beatDetectionMinVolume: 5; enableBeatDetection: true"
+                      audio-level-scale="positionScale: 1 40 1"
+                      mixin="magickeywhitetextaway magickeysilvertextaway magickeygoldtextaway magickeybluetextaway magickeygreentextaway splashaway"
+               event-set__textcallpink= "
+                _event : click;
+                _target : #pinkmagickey;
+                animation.property : visible;
+                animation.to: true;"
+></a-entity>
+            <a-entity id="Green" 
+                      position="4.5 0 0" 
+                      geometry="primitive: sphere"
+                      material="color:  #48bc1e;  metalness:  0.5; emissive:  #48bc1e;  emissiveIntensity:  0.6; roughness:  0.75; wireframe:  true"
+                      class="mouse"
+                      audioanalyser="src: #lane5; beatDetectionDecay: 0.99,
+    beatDetectionMinVolume: 15; enableBeatDetection: true"
+                      audio-level-scale="positionScale: 1 20 1"
+                    mixin="magickeywhitetextaway magickeysilvertextaway magickeygoldtextaway magickeypinktextaway magickeybluetextaway splashaway"
+                                     event-set__textcallgreen= "
+                _event : click;
+                _target : #greenmagickey;
+                animation.property : visible;
+                animation.to: true;"
+></a-entity>
+            <a-entity id="White" 
+                      position="-4.5 0 0" 
+                      geometry="primitive: sphere" 
+                      material="color:  #ffffff;  metalness:  0.5; emissive:  #ffffff;  emissiveIntensity:  0.6; roughness:  0.75; wireframe:  true"
+                      class="mouse"
+                      audioanalyser="src: #lane6; beatDetectionDecay: 0.99,
+    beatDetectionMinVolume: 15; enableBeatDetection: true"
+                      ring-on-beat2="analyserEl: #White"
+                      audio-level-scale="positionScale: 1 20 1"
+                      mixin="magickeysilvertextaway magickeygoldtextaway magickeypinktextaway magickeybluetextaway magickeygreentextaway splashaway"
+                      event-set__textcallwhite= "
+                _event : click;
+                _target : #whitemagickey;
+                animation.property : visible;
+                animation.to: true;"
+></a-entity></a-entity></a-entity>
+
+     
+  </a-scene>
+  </body>
+</html>
