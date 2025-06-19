@@ -30,7 +30,28 @@
     <script src="./audio-light-on-beat.js"></script>
     <script src="shader-grid-glitch.js"></script>
     <script src="shader-hologram.js"></script>
-    
+
+
+    <script>
+  // Wait for A-Frame to be available
+  window.addEventListener('DOMContentLoaded', () => {
+    const layoutComp = AFRAME.components.layout;
+    if (layoutComp && layoutComp.schema) {
+      // Identify any numeric fields with string defaults
+      // Here we set margin and padding defaults to 0
+      if (typeof layoutComp.schema.margin !== 'undefined') {
+        layoutComp.schema.margin.default = 0;
+      }
+      if (typeof layoutComp.schema.padding !== 'undefined') {
+        layoutComp.schema.padding.default = 0;
+      }
+      console.log('layout schema patched:', {
+        margin: layoutComp.schema.margin.default,
+        padding: layoutComp.schema.padding.default
+      });
+    }
+  });
+</script>
 </head>
 <body>
   
