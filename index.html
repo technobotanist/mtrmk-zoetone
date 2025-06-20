@@ -3,96 +3,64 @@
   <head>
     <title>Audio Visualizer</title>
     <meta name="description" content="Audio Visualizer">
+<!--   This is a series of components and plugins used -->
+<!-- AFrame webXR Library   -->
+<script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
 
-    <!-- A-Frame core -->
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <!-- Event, Layout, Look-at, Troika Text components -->
-    <script src="https://unpkg.com/aframe-event-set-component@^4.0.0/dist/aframe-event-set-component.min.js"></script>
-    <script src="https://unpkg.com/aframe-layout-component@4.3.1/dist/aframe-layout-component.min.js"></script>
-    <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
-    <script src="https://unpkg.com/aframe-troika-text/dist/aframe-troika-text.min.js"></script>
+<!--Buttons and other event system uses event-set component and proxy events -->
+<script src="https://unpkg.com/aframe-event-set-component@^4.0.0/dist/aframe-event-set-component.min.js"></script> 
+    
+<!--   The layout of buttons utilizes layout component and text positioning uses look-at-->
+<script src="https://unpkg.com/aframe-layout-component@4.3.1/dist/aframe-layout-component.min.js"></script> 
+<script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script> 
 
-    <!-- Monkey‐patch Layout schema to eliminate warnings -->
-    <script>
-      window.addEventListener('DOMContentLoaded', () => {
-        const layout = AFRAME.components.layout;
-        if (layout && layout.schema) {
-          ['margin', 'padding', 'cellWidth', 'cellHeight'].forEach(prop => {
-            if (layout.schema[prop] && typeof layout.schema[prop].default !== 'number') {
-              layout.schema[prop].default = 0;
-              console.log(`Patched layout.schema.${prop}.default → 0`);
-            }
-          });
-        }
-      });
-    </script>
-
-    <!-- Local scripts -->
+<!-- troika text component allows branded fonts -->
+<script src="https://unpkg.com/aframe-troika-text/dist/aframe-troika-text.min.js"></script>
+    
+<!--     Local scripts -->
     <script src="./playtracks.js"></script>
-    <script src="./aframe-audioanalyser-component.js"></script>
+    <script src="./aframe-audioanalyser-component.js"></script> 
     <script src="./audio-level-scale-component.js"></script>
     <script src="./audio-ring-on-beat.js"></script>
     <script src="./audio-ring-on-beat2.js"></script>
-    <script src="./frequency-spectrum-component.js"></script>
+    <script src="./frequency-spectum-component.js"></script>
     <script src="./spectrogram-component.js"></script>
     <script src="./proxy-event.js"></script>
     <script src="./info-message.js"></script>
     <script src="./audio-light-on-beat.js"></script>
     <script src="shader-grid-glitch.js"></script>
     <script src="shader-hologram.js"></script>
-  </head>
-  <body>
-    <a-scene info-message="htmlSrc: #messageText">
+    
+</head>
+<body>
+  
+    <a-scene
+      info-message="htmlSrc: #messageText">
+
       <a-assets>
-        <!-- Audio tracks (CORS‐enabled via jsDelivr) -->
-        <audio id="lane1" class="music1"
-               src="https://cdn.jsdelivr.net/gh/technobotanist/mtrmk-zoetone@main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane1_kastelheimer.mp3"
-               preload="auto" crossorigin="anonymous"></audio>
-        <audio id="lane2" class="music2"
-               src="https://cdn.jsdelivr.net/gh/technobotanist/mtrmk-zoetone@main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane2_drums.mp3"
-               preload="auto" crossorigin="anonymous"></audio>
-        <audio id="lane3" class="music3"
-               src="https://cdn.jsdelivr.net/gh/technobotanist/mtrmk-zoetone@main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane3leadsynth.mp3"
-               preload="auto" crossorigin="anonymous"></audio>
-        <audio id="lane4" class="music4"
-               src="https://cdn.jsdelivr.net/gh/technobotanist/mtrmk-zoetone@main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane4backingOrgan.mp3"
-               preload="auto" crossorigin="anonymous"></audio>
-        <audio id="lane5" class="music5"
-               src="https://cdn.jsdelivr.net/gh/technobotanist/mtrmk-zoetone@main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane5wailsynth.mp3"
-               preload="auto" crossorigin="anonymous"></audio>
-        <audio id="lane6" class="music6"
-               src="https://cdn.jsdelivr.net/gh/technobotanist/mtrmk-zoetone@main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane6midgroundsynth.mp3"
-               preload="auto" crossorigin="anonymous"></audio>
+ 
+<!--Load your 6 audio tracks -->
+<audio id="lane1" class="music1" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane1_kastelheimer.mp3" preload="auto"></audio>
+<audio id="lane2" class="music2" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane2_drums.mp3" preload="auto"></audio>
+<audio id="lane3" class="music3" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane3leadsynth.mp3" preload="auto"></audio>
+<audio id="lane4" class="music4" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane4backingOrgan.mp3" preload="auto"></audio> 
+<audio id="lane5" class="music5" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane5wailsynth.mp3" preload="auto"></audio> 
+<audio id="lane6" class="music6" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane6midgroundsynth.mp3" preload="auto"></audio>
 
-        <!-- 3D models (CORS‐enabled via jsDelivr) -->
-        <a-asset-item id="magickey"
-                      src="https://cdn.jsdelivr.net/gh/technobotanist/mtrmk-zoetone@main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MTRMagicKeyTrueOrigin.gltf"
-                      preload="auto" crossorigin="anonymous"></a-asset-item>
-        <a-asset-item id="whitemagickeytext"
-                      src="https://cdn.jsdelivr.net/gh/technobotanist/mtrmk-zoetone@main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_WhiteMTRMagicKeyText.glb"
-                      preload="auto" crossorigin="anonymous"></a-asset-item>
-        <a-asset-item id="silvermagickeytext"
-                      src="https://cdn.jsdelivr.net/gh/technobotanist/mtrmk-zoetone@main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_SilverMTRMagicKeyText.glb"
-                      preload="auto" crossorigin="anonymous"></a-asset-item>
-        <a-asset-item id="goldmagickeytext"
-                      src="https://cdn.jsdelivr.net/gh/technobotanist/mtrmk-zoetone@main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_GoldMTRMagicKeyText.glb"
-                      preload="auto" crossorigin="anonymous"></a-asset-item>
-        <a-asset-item id="pinkmagickeytext"
-                      src="https://cdn.jsdelivr.net/gh/technobotanist/mtrmk-zoetone@main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_PinkMTRMagicKeyText.glb"
-                      preload="auto" crossorigin="anonymous"></a-asset-item>
-        <a-asset-item id="bluemagickeytext"
-                      src="https://cdn.jsdelivr.net/gh/technobotanist/mtrmk-zoetone@main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_BlueMTRMagicKeyText.glb"
-                      preload="auto" crossorigin="anonymous"></a-asset-item>
-        <a-asset-item id="greenmagickeytext"
-                      src="https://cdn.jsdelivr.net/gh/technobotanist/mtrmk-zoetone@main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_GreenMTRMagicKeyText.glb"
-                      preload="auto" crossorigin="anonymous"></a-asset-item>
-
+<!--Brand 3 Models -->        
+<a-asset-item id="magickey" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MTRMagicKeyTrueOrigin.gltf" preload="auto"></a-asset-item>
+<a-asset-item id="whitemagickeytext" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_WhiteMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="silvermagickeytext" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_SilverMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="goldmagickeytext" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_GoldMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="pinkmagickeytext" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_PinkMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="bluemagickeytext" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_BlueMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="greenmagickeytext" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_GreenMTRMagicKeyText.glb" preload="auto"></a-asset-item>
 
 <!-- Text for bottom right corner pop up -->
 <a-asset-item id="messageText" src="message.html"></a-asset-item>
  
 <!--TR Magic Key Brand Fonts -->
-<a-asset-item id="magickeytitlingfont" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MagicKeyTitlingFont.ttf" crossorigin="anonymous"></a-asset-item>
+<a-asset-item id="magickeytitlingfont" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MagicKeyTitlingFont.ttf"></a-asset-item>
 
  <a-mixin   
           id="splashaway"
