@@ -62,6 +62,16 @@
       "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane6midgroundsynth.mp3"
     ];
 
+    // Helper: get current track URLs from audio elements (if present)
+    function getCurrentTrackUrls() {
+      const urls = [];
+      for (let i = 0; i < 6; i++) {
+        const el = document.getElementById(`lane${i+1}`);
+        urls.push(el ? el.src : defaultTracks[i]);
+      }
+      return urls;
+    }
+
     const channelCountInput = document.getElementById('channelCount');
     const trackInputsDiv = document.getElementById('trackInputs');
     const audioAssets = document.getElementById('audio-assets');
@@ -74,6 +84,8 @@
 
     function updateChannels() {
       const count = parseInt(channelCountInput.value, 10);
+      // Get current URLs before removing
+      const prevUrls = getCurrentTrackUrls();
       // Remove all audio elements
       audioAssets.innerHTML = '';
       trackInputsDiv.innerHTML = '';
@@ -97,12 +109,13 @@
       });
       for (let i = 0; i < count; i++) {
         // Create audio element
-        const audio = document.createElement('audio');
+        let audio = document.createElement('audio');
         audio.id = `lane${i+1}`;
         audio.className = `music${i+1}`;
         audio.setAttribute('crossorigin', 'anonymous');
         audio.setAttribute('preload', 'auto');
-        audio.src = defaultTracks[i] || '';
+        audio.src = prevUrls[i] || defaultTracks[i] || '';
+        // Do not attempt to play until user gesture
         if (!playing) audio.pause();
         audioAssets.appendChild(audio);
 
@@ -120,6 +133,12 @@
         });
         label.appendChild(urlInput);
         trackInputsDiv.appendChild(label);
+      }
+
+      // Patch for playtracks.js: set window.audio1..audio6 to the new audio elements
+      for (let i = 0; i < 6; i++) {
+        const el = document.getElementById(`lane${i+1}`);
+        window[`audio${i+1}`] = el || null;
       }
     }
 
