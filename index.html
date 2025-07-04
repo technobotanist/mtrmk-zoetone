@@ -40,7 +40,7 @@
         <input type="number" id="channelCount" min="0" max="6" value="6" style="width: 3em;">
       </label>
       <div>
-        <button id="playPauseBtn" style="margin-left: 0.5em; font-size: 1em;">⏸️</button>
+        <button id="playPauseBtn" style="margin-left: 0.5em; font-size: 1em;">▶️</button>
         <button id="minimizeBtn" style="margin-left: 0.5em; font-size: 1em;">_</button>
       </div>
     </div>
@@ -105,7 +105,7 @@
     const playPauseBtn = document.getElementById('playPauseBtn');
 
     let minimized = false;
-    let playing = true;
+    let playing = false;
 
     // --- Audio element reuse ---
     function updateChannels() {
@@ -230,7 +230,7 @@
     window.addEventListener('DOMContentLoaded', () => {
       updateChannels();
       setMinimized(false);
-      setPlayState(true);
+      setPlayState(false);
     });
     </script>
 
