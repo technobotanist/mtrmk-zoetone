@@ -4,19 +4,19 @@ AFRAME.registerComponent('frequency-spectrum', {
       // The number of bins in which to divide the frequency spectrum (i.e., the number of shapes)
       bins: {type: 'int', default: 8},
       // Three values representing the size scale factor in the x,y,z axes
-      sizeScale: {type: 'vec3'},
+      sizeScale: {type: 'vec3', default: {x: 1, y: 1, z: 1}},
       // Three values representing the position scale factor in the x,y,z axes
-      positionScale: {type: 'vec3'},
+      positionScale: {type: 'vec3', default: {x: 0, y: 0, z: 0}},
       // The amount of space between shapes
-      spacing: {type: 'vec3'},
+      spacing: {type: 'vec3', default: {x: 1, y: 0, z: 0}},
       // The axis along which the bins are arranged
       binAlong: {type: 'string', default: 'x-axis'},
       // Only affect x scaling in one direction
-      offsetX: {type: 'boolean'},
+      offsetX: {type: 'boolean', default: false},
       // Only affect y scaling in one direction
-      offsetY: {type: 'boolean'},
+      offsetY: {type: 'boolean', default: false},
       // Only affect z scaling in one direction
-      offsetZ: {type: 'boolean'},
+      offsetZ: {type: 'boolean', default: false},
       // How the frequency values are scaled to determine average bin frequency
       frequencyScale: {type: 'string', default: 'log'},
       // The type of shape to draw
@@ -38,26 +38,21 @@ AFRAME.registerComponent('frequency-spectrum', {
         this.initialScale.y : 0
       const zMultiplier = this.data.binAlong === 'z-axis' ?
         this.initialScale.z : 0
-      // Function that returns a one object array containing the x, y, z
-      // posiiton of each child element
-      const setChildPosition = (band) => [{
-        x: this.initialPos.x + band * xMultiplier +
-          this.data.spacing.x * band,
-        y: this.initialPos.y + band * yMultiplier +
-          this.data.spacing.y * band,
-        z: this.initialPos.z + band * zMultiplier +
-          this.data.spacing.z * band
-      }
-      ]
+      // Function that returns the x, y, z position of each child element as an object
+      const setChildPosition = (band) => ({
+        x: this.initialPos.x + band * xMultiplier + this.data.spacing.x * band,
+        y: this.initialPos.y + band * yMultiplier + this.data.spacing.y * band,
+        z: this.initialPos.z + band * zMultiplier + this.data.spacing.z * band
+      });
 
       // Create a child entity for each band and set some parameters
       for (let i = 0; i < this.data.bins; i++) {
-        const childEntity = document.createElement('a-entity')
-        this.el.appendChild(childEntity)
-        childEntity.setAttribute('geometry', { primitive: this.data.shape })
-        childEntity.setAttribute('material', { color: this.data.color })
-        childEntity.setAttribute('position', ...setChildPosition(i))
-        this.childrenInitialPos.push(...setChildPosition(i))
+        const childEntity = document.createElement('a-entity');
+        this.el.appendChild(childEntity);
+        childEntity.setAttribute('geometry', { primitive: this.data.shape });
+        childEntity.setAttribute('material', { color: this.data.color });
+        childEntity.setAttribute('position', setChildPosition(i));
+        this.childrenInitialPos.push(setChildPosition(i));
       }
     },
     tick: function () {
@@ -115,25 +110,31 @@ AFRAME.registerComponent('frequency-spectrum', {
       }
 
       // Set the scale values of each child based on the average volume of each band and scale factor
-      const children = this.el.children
+      // Only update the spectrum bar children, not all children
+      const children = Array.from(this.el.children).slice(-this.data.bins);
       for (let i = 0; i < children.length; i++) {
-        const child = children[i].object3D
+        const child = children[i].object3D;
+        // Defensive: skip if bandedLevels[i] is undefined
+        if (typeof bandedLevels[i] === 'undefined') continue;
 
-        child.scale.x = this.initialScale.x * (1 + this.data.sizeScale.x * bandedLevels[i])
-        child.scale.y = this.initialScale.y * (1 + this.data.sizeScale.y * bandedLevels[i])
-        child.scale.z = this.initialScale.z * (1 + this.data.sizeScale.z * bandedLevels[i])
+        child.scale.x = this.initialScale.x * (1 + this.data.sizeScale.x * bandedLevels[i]);
+        child.scale.y = this.initialScale.y * (1 + this.data.sizeScale.y * bandedLevels[i]);
+        child.scale.z = this.initialScale.z * (1 + this.data.sizeScale.z * bandedLevels[i]);
 
-        child.position.x = this.childrenInitialPos[i].x + (1 + this.data.positionScale.x * bandedLevels[i])
-        child.position.y = this.childrenInitialPos[i].y + (1 + this.data.positionScale.y * bandedLevels[i])
-        child.position.z = this.childrenInitialPos[i].z + (1 + this.data.positionScale.z * bandedLevels[i])
+        child.position.x = this.childrenInitialPos[i].x + (1 + this.data.positionScale.x * bandedLevels[i]);
+        child.position.y = this.childrenInitialPos[i].y + (1 + this.data.positionScale.y * bandedLevels[i]);
+        child.position.z = this.childrenInitialPos[i].z + (1 + this.data.positionScale.z * bandedLevels[i]);
 
         // Set positive offset of element along axis if specified
-        if (this.data.offsetX)
-          { child.position.x = this.initialPos.x + child.scale.x / 2 }
-        if (this.data.offsetY)
-          { child.position.y = this.initialPos.y + child.scale.y / 2 }
-        if (this.data.offsetZ)
-          { child.position.z = this.initialPos.z + child.scale.z / 2 }
+        if (this.data.offsetX) {
+          child.position.x = this.initialPos.x + child.scale.x / 2;
+        }
+        if (this.data.offsetY) {
+          child.position.y = this.initialPos.y + child.scale.y / 2;
+        }
+        if (this.data.offsetZ) {
+          child.position.z = this.initialPos.z + child.scale.z / 2;
+        }
       }
     }
 })
