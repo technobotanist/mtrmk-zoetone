@@ -33,19 +33,119 @@
     
 </head>
 <body>
-  
-    <a-scene
-      info-message="htmlSrc: #messageText">
 
-      <a-assets>
- 
-<!--Load your 6 audio tracks -->
-<audio id="lane1" class="music1" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane1_kastelheimer.mp3" preload="auto"></audio>
-<audio id="lane2" class="music2" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane2_drums.mp3" preload="auto"></audio>
-<audio id="lane3" class="music3" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane3leadsynth.mp3" preload="auto"></audio>
-<audio id="lane4" class="music4" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane4backingOrgan.mp3" preload="auto"></audio> 
-<audio id="lane5" class="music5" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane5wailsynth.mp3" preload="auto"></audio> 
-<audio id="lane6" class="music6" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane6midgroundsynth.mp3" preload="auto"></audio>
+  <div id="channel-controls" style="position: absolute; z-index: 10; background: rgba(30,30,30,0.8); color: #fff; padding: 1em; border-radius: 8px; top: 1em; left: 1em; min-width: 18em;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <label style="margin-bottom: 0;">Number of Channels:
+        <input type="number" id="channelCount" min="0" max="6" value="6" style="width: 3em;">
+      </label>
+      <div>
+        <button id="playPauseBtn" style="margin-left: 0.5em; font-size: 1em;">⏸️</button>
+        <button id="minimizeBtn" style="margin-left: 0.5em; font-size: 1em;">_</button>
+      </div>
+    </div>
+    <div id="trackInputs" style="margin-top: 0.5em;"></div>
+  </div>
+
+  <a-scene info-message="htmlSrc: #messageText">
+    <a-assets id="audio-assets">
+      <!-- Audio elements will be injected here by JS -->
+    </a-assets>
+    <script>
+    // --- Dynamic Channel UI and Audio Management ---
+    const defaultTracks = [
+      "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane1_kastelheimer.mp3",
+      "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane2_drums.mp3",
+      "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane3leadsynth.mp3",
+      "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane4backingOrgan.mp3",
+      "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane5wailsynth.mp3",
+      "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane6midgroundsynth.mp3"
+    ];
+
+    const channelCountInput = document.getElementById('channelCount');
+    const trackInputsDiv = document.getElementById('trackInputs');
+    const audioAssets = document.getElementById('audio-assets');
+    const channelControls = document.getElementById('channel-controls');
+    const minimizeBtn = document.getElementById('minimizeBtn');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+
+    let minimized = false;
+    let playing = true;
+
+    function updateChannels() {
+      const count = parseInt(channelCountInput.value, 10);
+      // Remove all audio elements
+      audioAssets.innerHTML = '';
+      trackInputsDiv.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        // Create audio element
+        const audio = document.createElement('audio');
+        audio.id = `lane${i+1}`;
+        audio.className = `music${i+1}`;
+        audio.setAttribute('crossorigin', 'anonymous');
+        audio.setAttribute('preload', 'auto');
+        audio.src = defaultTracks[i] || '';
+        if (!playing) audio.pause();
+        audioAssets.appendChild(audio);
+
+        // Create file/url input
+        const label = document.createElement('label');
+        label.style.display = 'block';
+        label.textContent = `Channel ${i+1}: `;
+        const urlInput = document.createElement('input');
+        urlInput.type = 'url';
+        urlInput.placeholder = 'Paste audio URL or leave for default';
+        urlInput.value = audio.src;
+        urlInput.style.width = '20em';
+        urlInput.addEventListener('change', e => {
+          audio.src = e.target.value;
+        });
+        label.appendChild(urlInput);
+        trackInputsDiv.appendChild(label);
+      }
+    }
+
+    function setMinimized(min) {
+      minimized = min;
+      if (minimized) {
+        trackInputsDiv.style.display = 'none';
+        channelCountInput.parentElement.style.display = 'none';
+        minimizeBtn.textContent = '▢';
+      } else {
+        trackInputsDiv.style.display = '';
+        channelCountInput.parentElement.style.display = '';
+        minimizeBtn.textContent = '_';
+      }
+    }
+
+    minimizeBtn.addEventListener('click', () => {
+      setMinimized(!minimized);
+    });
+
+    function setPlayState(play) {
+      playing = play;
+      const audios = audioAssets.querySelectorAll('audio');
+      audios.forEach(audio => {
+        if (play) {
+          audio.play().catch(()=>{});
+        } else {
+          audio.pause();
+        }
+      });
+      playPauseBtn.textContent = play ? '⏸️' : '▶️';
+    }
+
+    playPauseBtn.addEventListener('click', () => {
+      setPlayState(!playing);
+    });
+
+    channelCountInput.addEventListener('input', updateChannels);
+    window.addEventListener('DOMContentLoaded', () => {
+      updateChannels();
+      setMinimized(false);
+      setPlayState(true);
+    });
+    </script>
 
 <!--Brand 3 Models -->        
 <a-asset-item id="magickey" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MTRMagicKeyTrueOrigin.gltf" preload="auto"></a-asset-item>
@@ -58,7 +158,7 @@
 
 <!-- Text for bottom right corner pop up -->
 <a-asset-item id="messageText" src="message.html"></a-asset-item>
- 
+
 <!--TR Magic Key Brand Fonts -->
 <a-asset-item id="magickeytitlingfont" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MagicKeyTitlingFont.ttf"></a-asset-item>
 
