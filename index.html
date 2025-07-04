@@ -34,7 +34,7 @@
 </head>
 <body>
 
-  <div id="channel-controls" style="position: absolute; z-index: 10; background: rgba(30,30,30,0.8); color: #fff; padding: 1em; border-radius: 8px; top: 1em; left: 1em; min-width: 18em;">
+  <div id="channel-controls" style="position: absolute; z-index: 10;  color: #fff; padding: 1em; border-radius: 8px; top: 1em; left: 1em; min-width: 18em;">
     <div style="display: flex; align-items: center; justify-content: space-between;">
       <label style="margin-bottom: 0;">Number of Channels:
         <input type="number" id="channelCount" min="0" max="6" value="6" style="width: 3em;">
@@ -77,6 +77,22 @@
       // Remove all audio elements
       audioAssets.innerHTML = '';
       trackInputsDiv.innerHTML = '';
+      // Update/mute/hide visualization geometries
+      const visIds = [
+        'Silver', 'Blue', 'Gold', 'Pink', 'Green', 'White'
+      ];
+      visIds.forEach((id, idx) => {
+        const ent = document.getElementById(id);
+        if (ent) {
+          if (idx < count) {
+            ent.setAttribute('visible', 'true');
+            ent.setAttribute('audioanalyser', 'enabled: true');
+          } else {
+            ent.setAttribute('visible', 'false');
+            ent.setAttribute('audioanalyser', 'enabled: false');
+          }
+        }
+      });
       for (let i = 0; i < count; i++) {
         // Create audio element
         const audio = document.createElement('audio');
