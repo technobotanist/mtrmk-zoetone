@@ -86,10 +86,12 @@
         if (ent) {
           if (idx < count) {
             ent.setAttribute('visible', 'true');
-            ent.setAttribute('audioanalyser', 'enabled: true');
+            // Restore the correct src for audioanalyser
+            ent.setAttribute('audioanalyser', `src: #lane${idx+1}; enabled: true`);
           } else {
             ent.setAttribute('visible', 'false');
-            ent.setAttribute('audioanalyser', 'enabled: false');
+            // Disable and remove src for audioanalyser
+            ent.setAttribute('audioanalyser', 'enabled: false; src:');
           }
         }
       });
