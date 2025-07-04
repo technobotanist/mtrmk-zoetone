@@ -23,7 +23,7 @@
     <script src="./audio-level-scale-component.js"></script>
     <script src="./audio-ring-on-beat.js"></script>
     <script src="./audio-ring-on-beat2.js"></script>
-    <script src="./frequency-spectum-component.js"></script>
+    <script src="./frequency-spectrum-component.js"></script>
     <script src="./spectrogram-component.js"></script>
     <script src="./proxy-event.js"></script>
     <script src="./info-message.js"></script>
@@ -40,27 +40,27 @@
       <a-assets>
  
 <!--Load your 6 audio tracks -->
-<audio id="lane1" class="music1" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane1_kastelheimer.mp3" preload="auto"></audio>
-<audio id="lane2" class="music2" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane2_drums.mp3" preload="auto"></audio>
-<audio id="lane3" class="music3" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane3leadsynth.mp3" preload="auto"></audio>
-<audio id="lane4" class="music4" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane4backingOrgan.mp3" preload="auto"></audio> 
-<audio id="lane5" class="music5" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane5wailsynth.mp3" preload="auto"></audio> 
-<audio id="lane6" class="music6" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane6midgroundsynth.mp3" preload="auto"></audio>
+<audio id="lane1" class="music1" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane1_kastelheimer.mp3" preload="auto"></audio>
+<audio id="lane2" class="music2" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane2_drums.mp3" preload="auto"></audio>
+<audio id="lane3" class="music3" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane3leadsynth.mp3" preload="auto"></audio>
+<audio id="lane4" class="music4" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane4backingOrgan.mp3" preload="auto"></audio> 
+<audio id="lane5" class="music5" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane5wailsynth.mp3" preload="auto"></audio> 
+<audio id="lane6" class="music6" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane6midgroundsynth.mp3" preload="auto"></audio>
 
 <!--Brand 3 Models -->        
-<a-asset-item id="magickey" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MTRMagicKeyTrueOrigin.gltf" preload="auto"></a-asset-item>
-<a-asset-item id="whitemagickeytext" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_WhiteMTRMagicKeyText.glb" preload="auto"></a-asset-item>
-<a-asset-item id="silvermagickeytext" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_SilverMTRMagicKeyText.glb" preload="auto"></a-asset-item>
-<a-asset-item id="goldmagickeytext" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_GoldMTRMagicKeyText.glb" preload="auto"></a-asset-item>
-<a-asset-item id="pinkmagickeytext" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_PinkMTRMagicKeyText.glb" preload="auto"></a-asset-item>
-<a-asset-item id="bluemagickeytext" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_BlueMTRMagicKeyText.glb" preload="auto"></a-asset-item>
-<a-asset-item id="greenmagickeytext" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_GreenMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="magickey" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MTRMagicKeyTrueOrigin.gltf" preload="auto"></a-asset-item>
+<a-asset-item id="whitemagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_WhiteMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="silvermagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_SilverMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="goldmagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_GoldMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="pinkmagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_PinkMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="bluemagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_BlueMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="greenmagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_GreenMTRMagicKeyText.glb" preload="auto"></a-asset-item>
 
 <!-- Text for bottom right corner pop up -->
 <a-asset-item id="messageText" src="message.html"></a-asset-item>
  
 <!--TR Magic Key Brand Fonts -->
-<a-asset-item id="magickeytitlingfont" src="https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MagicKeyTitlingFont.ttf"></a-asset-item>
+<a-asset-item id="magickeytitlingfont" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MagicKeyTitlingFont.ttf"></a-asset-item>
 
  <a-mixin   
           id="splashaway"
@@ -219,7 +219,7 @@ MTR Magic Key
 Raleigh, NC; 
                        align: center; 
                        color: #f9dea2; 
-                       font: https://github.com/technobotanist/mtrmk-zoetone/blob/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MagicKeyTitlingFont.ttf; 
+                       font: https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MagicKeyTitlingFont.ttf; 
                        fontSize: 3; fillOpacity:  0.5;  
                        outlineBlur:  0.34;  outlineColor:  #8c8c8c;  outlineOpacity:  0.64;  outlineWidth:  0.02;  
                        strokeColor:  #f9dea2;  strokeOpacity:  4.01;  strokeWidth:  0.05"
