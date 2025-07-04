@@ -1,35 +1,29 @@
-AFRAME.registerComponent('playtracks', {
-  init: function () {
+function playtracksInit(event) {
+  // Get up-to-date audio elements from event.detail (preferred) or window globals (fallback)
+  let audios = (event && event.detail && event.detail.audios) ? event.detail.audios : [
+    window.audio1, window.audio2, window.audio3, window.audio4, window.audio5, window.audio6
+  ];
+  AFRAME.registerComponent('playtracks', {
+    init: function () {
       let playing = false;
       var el = this.el;
-      let audio1 = document.querySelector(".music1");
-      let audio2 = document.querySelector(".music2");
-      let audio3 = document.querySelector(".music3");
-      let audio4 = document.querySelector(".music4");
-      let audio5 = document.querySelector(".music5");
-      let audio6 = document.querySelector(".music6");
-
-          el.addEventListener('click', (ee) => {
-          console.log(ee)
+      el.addEventListener('click', (ee) => {
+        console.log(ee);
+        audios.forEach(audio => {
+          if (!audio) return;
           if (!playing) {
-            audio1.play();
-            audio2.play();
-            audio3.play();
-            audio4.play();
-            audio5.play();
-            audio6.play();
+            audio.play && audio.play();
           } else {
-            audio1.pause();
-            audio2.pause();
-            audio3.pause();
-            audio4.pause();
-            audio5.pause();
-            audio6.pause();
-
+            audio.pause && audio.pause();
           }
-          playing = !playing;
         });
+        playing = !playing;
+      });
+    }
+  });
+}
 
-      }})
+// Listen for the custom event and (re)register the component with the latest audio elements
+window.addEventListener('audioElementsReady', playtracksInit);
   
 

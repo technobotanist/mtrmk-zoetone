@@ -72,6 +72,31 @@
       return urls;
     }
 
+    // --- AudioContext safeguard ---
+    let audioContextResumed = false;
+    function resumeAllAudioContexts() {
+      // Resume all AudioContexts on the page (A-Frame, Web Audio, etc.)
+      if (audioContextResumed) return;
+      audioContextResumed = true;
+      if (window.AFRAME && AFRAME.scenes && AFRAME.scenes.length) {
+        AFRAME.scenes.forEach(scene => {
+          if (scene.audioListener && scene.audioListener.context && scene.audioListener.context.state === 'suspended') {
+            scene.audioListener.context.resume();
+          }
+        });
+      }
+      // Resume all audio elements
+      for (let i = 0; i < 6; i++) {
+        const el = document.getElementById(`lane${i+1}`);
+        if (el && el.paused) {
+          el.play().catch(()=>{});
+        }
+      }
+    }
+    // Listen for first user gesture
+    window.addEventListener('pointerdown', resumeAllAudioContexts, { once: true });
+    window.addEventListener('keydown', resumeAllAudioContexts, { once: true });
+
     const channelCountInput = document.getElementById('channelCount');
     const trackInputsDiv = document.getElementById('trackInputs');
     const audioAssets = document.getElementById('audio-assets');
@@ -82,44 +107,43 @@
     let minimized = false;
     let playing = true;
 
+    // --- Audio element reuse ---
     function updateChannels() {
       const count = parseInt(channelCountInput.value, 10);
       // Get current URLs before removing
       const prevUrls = getCurrentTrackUrls();
-      // Remove all audio elements
-      audioAssets.innerHTML = '';
-      trackInputsDiv.innerHTML = '';
-      // Update/mute/hide visualization geometries
-      const visIds = [
-        'Silver', 'Blue', 'Gold', 'Pink', 'Green', 'White'
-      ];
-      visIds.forEach((id, idx) => {
-        const ent = document.getElementById(id);
-        if (ent) {
-          if (idx < count) {
-            ent.setAttribute('visible', 'true');
-            // Restore the correct src for audioanalyser
-            ent.setAttribute('audioanalyser', `src: #lane${idx+1}; enabled: true`);
-          } else {
-            ent.setAttribute('visible', 'false');
-            // Disable and remove src for audioanalyser
-            ent.setAttribute('audioanalyser', 'enabled: false; src:');
-          }
-        }
-      });
-      for (let i = 0; i < count; i++) {
-        // Create audio element
-        let audio = document.createElement('audio');
-        audio.id = `lane${i+1}`;
-        audio.className = `music${i+1}`;
-        audio.setAttribute('crossorigin', 'anonymous');
-        audio.setAttribute('preload', 'auto');
-        audio.src = prevUrls[i] || defaultTracks[i] || '';
-        // Do not attempt to play until user gesture
-        if (!playing) audio.pause();
-        audioAssets.appendChild(audio);
 
-        // Create file/url input
+      // Reuse or create audio elements as needed
+      let existingAudios = [];
+      for (let i = 0; i < 6; i++) {
+        const el = document.getElementById(`lane${i+1}`);
+        if (el) existingAudios.push(el);
+      }
+
+      // Remove extra audio elements if reducing channel count
+      for (let i = count; i < existingAudios.length; i++) {
+        existingAudios[i].remove();
+      }
+
+      // Add or update audio elements up to count
+      for (let i = 0; i < count; i++) {
+        let audio = document.getElementById(`lane${i+1}`);
+        if (!audio) {
+          audio = document.createElement('audio');
+          audio.id = `lane${i+1}`;
+          audio.className = `music${i+1}`;
+          audio.setAttribute('crossorigin', 'anonymous');
+          audio.setAttribute('preload', 'auto');
+          audioAssets.appendChild(audio);
+        }
+        audio.src = prevUrls[i] || defaultTracks[i] || '';
+        if (!playing) audio.pause();
+      }
+
+      // Update the UI inputs
+      trackInputsDiv.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const audio = document.getElementById(`lane${i+1}`);
         const label = document.createElement('label');
         label.style.display = 'block';
         label.textContent = `Channel ${i+1}: `;
@@ -135,11 +159,37 @@
         trackInputsDiv.appendChild(label);
       }
 
+      // Update/mute/hide visualization geometries
+      const visIds = [
+        'Silver', 'Blue', 'Gold', 'Pink', 'Green', 'White'
+      ];
+      visIds.forEach((id, idx) => {
+        const ent = document.getElementById(id);
+        if (ent) {
+          if (idx < count) {
+            ent.setAttribute('visible', 'true');
+            ent.setAttribute('audioanalyser', `src: #lane${idx+1}; enabled: true`);
+          } else {
+            ent.setAttribute('visible', 'false');
+            ent.setAttribute('audioanalyser', 'enabled: false; src:');
+          }
+        }
+      });
+
       // Patch for playtracks.js: set window.audio1..audio6 to the new audio elements
       for (let i = 0; i < 6; i++) {
         const el = document.getElementById(`lane${i+1}`);
         window[`audio${i+1}`] = el || null;
       }
+      // --- Dispatch custom event for playtracks.js integration ---
+      // Notify that audio elements and globals are ready, with details
+      const event = new CustomEvent('audioElementsReady', {
+        detail: {
+          count,
+          audios: Array.from({length: 6}, (_, i) => window[`audio${i+1}`])
+        }
+      });
+      window.dispatchEvent(event);
     }
 
     function setMinimized(min) {
