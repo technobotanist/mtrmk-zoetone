@@ -81,13 +81,14 @@
       <!-- Audio elements will be injected here by JS -->
     </a-assets>
     <script>
-    // --- Camera Orbit Controls ---
+    // --- Camera Orbit Controls & Model Controls Robust Fix ---
     window.addEventListener('DOMContentLoaded', () => {
+      // Camera Orbit
       const minimizeRotationBtn = document.getElementById('minimizeRotationBtn');
       const orbitControls = document.getElementById('orbitControls');
       const orbitCheckbox = document.getElementById('orbitCameraCheckbox');
       let minimizedRotation = false;
-      let orbitInterval = null;
+      let orbitRequest = null;
       let orbitAngle = 0;
       let orbitSpeed = 0.005 + Math.random() * 0.01;
       let orbitRadius = 16 + Math.random() * 6;
@@ -95,55 +96,153 @@
       const rig = document.getElementById('rig');
       const eyes = document.getElementById('eyes');
       const zoetone = document.getElementById('zoetonecomplex');
-
+      // Default camera position
+      const defaultRigPos = {x: 0, y: 0, z: 0};
+      // Helper to get world position of zoetone
+      function getZoetoneWorldPos() {
+        if (!zoetone || !zoetone.object3D) return {x:0,y:0,z:0};
+        const pos = new THREE.Vector3();
+        zoetone.object3D.getWorldPosition(pos);
+        return pos;
+      }
       function setLookAt() {
         if (!eyes || !zoetone) return;
-        // Get zoetone world position
-        const zoetoneObj = zoetone.object3D;
-        const eyesObj = eyes.object3D;
-        if (zoetoneObj && eyesObj) {
-          eyesObj.lookAt(zoetoneObj.position);
-        }
+        const zoetonePos = getZoetoneWorldPos();
+        eyes.object3D.lookAt(zoetonePos);
       }
-
+      function animateOrbit() {
+        orbitAngle += orbitSpeed;
+        const x = Math.cos(orbitAngle) * orbitRadius;
+        const z = Math.sin(orbitAngle) * orbitRadius;
+        if (rig) rig.setAttribute('position', `${x} ${orbitHeight} ${z}`);
+        setLookAt();
+        if (orbitRequest) orbitRequest = requestAnimationFrame(animateOrbit);
+      }
       function startOrbit() {
-        if (orbitInterval) return;
+        if (orbitRequest) return;
         orbitAngle = Math.random() * Math.PI * 2;
         orbitSpeed = 0.005 + Math.random() * 0.01;
         orbitRadius = 16 + Math.random() * 6;
         orbitHeight = 2 + Math.random() * 2;
-        orbitInterval = setInterval(() => {
-          orbitAngle += orbitSpeed;
-          const x = Math.cos(orbitAngle) * orbitRadius;
-          const z = Math.sin(orbitAngle) * orbitRadius;
-          if (rig) rig.setAttribute('position', `${x} ${orbitHeight} ${z}`);
-          setLookAt();
-        }, 33);
+        orbitRequest = requestAnimationFrame(animateOrbit);
       }
-
       function stopOrbit() {
-        if (orbitInterval) {
-          clearInterval(orbitInterval);
-          orbitInterval = null;
+        if (orbitRequest) {
+          cancelAnimationFrame(orbitRequest);
+          orbitRequest = null;
         }
+        // Reset camera to default
+        if (rig) rig.setAttribute('position', `${defaultRigPos.x} ${defaultRigPos.y} ${defaultRigPos.z}`);
+        setLookAt();
       }
-
-      orbitCheckbox.addEventListener('change', (e) => {
-        if (orbitCheckbox.checked) {
-          startOrbit();
-        } else {
-          stopOrbit();
-        }
-      });
-
-      minimizeRotationBtn.addEventListener('click', () => {
-        minimizedRotation = !minimizedRotation;
-        orbitControls.style.display = minimizedRotation ? 'none' : '';
-        minimizeRotationBtn.textContent = minimizedRotation ? '▢' : '_';
-      });
-
-      // Clean up on page unload
+      if (orbitCheckbox) {
+        orbitCheckbox.addEventListener('change', () => {
+          if (orbitCheckbox.checked) {
+            startOrbit();
+          } else {
+            stopOrbit();
+          }
+        });
+      }
+      if (minimizeRotationBtn) {
+        minimizeRotationBtn.addEventListener('click', () => {
+          minimizedRotation = !minimizedRotation;
+          if (orbitControls) orbitControls.style.display = minimizedRotation ? 'none' : '';
+          minimizeRotationBtn.textContent = minimizedRotation ? '▢' : '_';
+        });
+      }
       window.addEventListener('beforeunload', stopOrbit);
+
+      // --- Model Controls Robustness ---
+      // Re-query all model controls in case of reload/DOM issues
+      const keyModelUrlInput = document.getElementById('keyModelUrl');
+      const keyModelScaleInput = document.getElementById('keyModelScale');
+      const keyModelScaleValue = document.getElementById('keyModelScaleValue');
+      const keyModelFileInput = document.getElementById('keyModelFile');
+      const userKeyAsset = document.getElementById('userkeymodel');
+      const playbuttonkey = document.getElementById('playbuttonkey');
+      const modelRotateX = document.getElementById('modelRotateX');
+      const modelRotateY = document.getElementById('modelRotateY');
+      const modelRotateZ = document.getElementById('modelRotateZ');
+      const modelRotateXValue = document.getElementById('modelRotateXValue');
+      const modelRotateYValue = document.getElementById('modelRotateYValue');
+      const modelRotateZValue = document.getElementById('modelRotateZValue');
+      let currentModelUrl = keyModelUrlInput ? keyModelUrlInput.value : '';
+      let lastFileUrl = null;
+      // Set default values if not already set
+      if (keyModelUrlInput && !keyModelUrlInput.value) keyModelUrlInput.value = userKeyAsset ? userKeyAsset.getAttribute('src') : '';
+      if (keyModelScaleInput) keyModelScaleInput.value = 0.5;
+      if (keyModelScaleValue) keyModelScaleValue.textContent = '0.5';
+      if (modelRotateX) modelRotateX.value = 49.8;
+      if (modelRotateY) modelRotateY.value = 125.5;
+      if (modelRotateZ) modelRotateZ.value = 128;
+      if (modelRotateXValue) modelRotateXValue.textContent = '49.8';
+      if (modelRotateYValue) modelRotateYValue.textContent = '125.5';
+      if (modelRotateZValue) modelRotateZValue.textContent = '128';
+      // Model update functions
+      function updateKeyModel(url, isFile) {
+        if (isFile && lastFileUrl) {
+          URL.revokeObjectURL(lastFileUrl);
+        }
+        if (typeof url !== 'string' || !url.trim()) {
+          url = userKeyAsset ? userKeyAsset.getAttribute('src') : '';
+        }
+        currentModelUrl = url;
+        if (userKeyAsset && url && typeof url === 'string' && url.trim()) {
+          userKeyAsset.setAttribute('src', url);
+          if (playbuttonkey) {
+            playbuttonkey.removeAttribute('gltf-model');
+            setTimeout(() => {
+              playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
+            }, 50);
+          }
+        }
+        if (isFile) lastFileUrl = url;
+      }
+      function updateKeyScale() {
+        if (!playbuttonkey || !keyModelScaleInput || !keyModelScaleValue) return;
+        const userScale = parseFloat(keyModelScaleInput.value) || 0.5;
+        playbuttonkey.setAttribute('scale', `${userScale} ${userScale} ${userScale}`);
+        keyModelScaleValue.textContent = userScale.toFixed(2);
+      }
+      function updateModelRotation() {
+        if (!playbuttonkey || !modelRotateX || !modelRotateY || !modelRotateZ) return;
+        const x = parseFloat(modelRotateX.value) || 0;
+        const y = parseFloat(modelRotateY.value) || 0;
+        const z = parseFloat(modelRotateZ.value) || 0;
+        if (modelRotateXValue) modelRotateXValue.textContent = x;
+        if (modelRotateYValue) modelRotateYValue.textContent = y;
+        if (modelRotateZValue) modelRotateZValue.textContent = z;
+        playbuttonkey.setAttribute('rotation', `${x} ${y} ${z}`);
+      }
+      if (modelRotateX) modelRotateX.addEventListener('input', updateModelRotation);
+      if (modelRotateY) modelRotateY.addEventListener('input', updateModelRotation);
+      if (modelRotateZ) modelRotateZ.addEventListener('input', updateModelRotation);
+      if (keyModelUrlInput) {
+        keyModelUrlInput.addEventListener('change', () => {
+          const url = keyModelUrlInput.value.trim();
+          if (url) {
+            updateKeyModel(url, false);
+          } else if (userKeyAsset) {
+            updateKeyModel(userKeyAsset.getAttribute('src'), false);
+            keyModelUrlInput.value = userKeyAsset.getAttribute('src');
+          }
+        });
+      }
+      if (keyModelScaleInput) keyModelScaleInput.addEventListener('input', updateKeyScale);
+      if (keyModelFileInput) {
+        keyModelFileInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            const url = URL.createObjectURL(file);
+            updateKeyModel(url, true);
+          }
+        });
+      }
+      // Initialize model state
+      updateKeyModel(keyModelUrlInput ? keyModelUrlInput.value : '', false);
+      updateKeyScale();
+      updateModelRotation();
     });
     </script>
     <script>
