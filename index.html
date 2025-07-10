@@ -93,10 +93,13 @@
 
       // Update asset and entity
       function updateKeyModel(url) {
-        if (!url) url = defaultKeyModelUrl;
+        // Only update if url is non-empty
+        if (!url) url = currentModelUrl || defaultKeyModelUrl;
         currentModelUrl = url;
-        userKeyAsset.setAttribute('src', url);
-        playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
+        if (url) {
+          userKeyAsset.setAttribute('src', url);
+          playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
+        }
       }
       function updateKeyScale() {
         const scale = parseFloat(keyModelScaleInput.value) || 0.5;
@@ -105,7 +108,13 @@
       }
 
       keyModelUrlInput.addEventListener('change', () => {
-        updateKeyModel(keyModelUrlInput.value.trim());
+        const url = keyModelUrlInput.value.trim();
+        if (url) {
+          updateKeyModel(url);
+        } else {
+          updateKeyModel(defaultKeyModelUrl);
+          keyModelUrlInput.value = defaultKeyModelUrl;
+        }
       });
       keyModelScaleInput.addEventListener('input', updateKeyScale);
 
@@ -114,7 +123,7 @@
         if (file) {
           const url = URL.createObjectURL(file);
           updateKeyModel(url);
-          keyModelUrlInput.value = '';
+          // Do not clear the input, keep last valid URL in the text box if present
         }
       });
 
@@ -255,13 +264,16 @@
 
     function setMinimized(min) {
       minimized = min;
+      const modelControlsDiv = document.getElementById('modelControls');
       if (minimized) {
         trackInputsDiv.style.display = 'none';
         channelCountInput.parentElement.style.display = 'none';
+        if (modelControlsDiv) modelControlsDiv.style.display = 'none';
         minimizeBtn.textContent = '▢';
       } else {
         trackInputsDiv.style.display = '';
         channelCountInput.parentElement.style.display = '';
+        if (modelControlsDiv) modelControlsDiv.style.display = '';
         minimizeBtn.textContent = '_';
       }
     }
