@@ -85,6 +85,7 @@
       const userKeyAsset = document.getElementById('userkeymodel');
       const playbuttonkey = document.getElementById('playbuttonkey');
       let currentModelUrl = defaultKeyModelUrl;
+      let lastFileUrl = null;
 
       // Set default values
       keyModelUrlInput.value = defaultKeyModelUrl;
@@ -92,14 +93,18 @@
       keyModelScaleValue.textContent = '0.5';
 
       // Update asset and entity
-      function updateKeyModel(url) {
-        // Only update if url is non-empty
+      function updateKeyModel(url, isFile) {
+        // Clean up previous file URL if needed
+        if (isFile && lastFileUrl) {
+          URL.revokeObjectURL(lastFileUrl);
+        }
         if (!url) url = currentModelUrl || defaultKeyModelUrl;
         currentModelUrl = url;
         if (url) {
           userKeyAsset.setAttribute('src', url);
           playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
         }
+        if (isFile) lastFileUrl = url;
       }
       function updateKeyScale() {
         const scale = parseFloat(keyModelScaleInput.value) || 0.5;
@@ -110,9 +115,9 @@
       keyModelUrlInput.addEventListener('change', () => {
         const url = keyModelUrlInput.value.trim();
         if (url) {
-          updateKeyModel(url);
+          updateKeyModel(url, false);
         } else {
-          updateKeyModel(defaultKeyModelUrl);
+          updateKeyModel(defaultKeyModelUrl, false);
           keyModelUrlInput.value = defaultKeyModelUrl;
         }
       });
@@ -122,13 +127,13 @@
         const file = e.target.files[0];
         if (file) {
           const url = URL.createObjectURL(file);
-          updateKeyModel(url);
+          updateKeyModel(url, true);
           // Do not clear the input, keep last valid URL in the text box if present
         }
       });
 
       // Initialize
-      updateKeyModel(defaultKeyModelUrl);
+      updateKeyModel(defaultKeyModelUrl, false);
       updateKeyScale();
     });
 
