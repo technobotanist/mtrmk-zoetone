@@ -114,6 +114,98 @@
       const playbuttonkey = document.getElementById('playbuttonkey');
       let currentModelUrl = defaultKeyModelUrl;
       let lastFileUrl = null;
+      // --- Robust Model Reload Logic ---
+      function updateKeyModel(newUrl, isFile = false) {
+        clearError();
+        if (!newUrl) newUrl = defaultKeyModelUrl;
+        // Revoke previous file object URL if needed
+        if (lastFileUrl && isFile) {
+          URL.revokeObjectURL(lastFileUrl);
+          lastFileUrl = null;
+        }
+        // Remove and recreate the asset item for robust reload
+        let assetsParent = userKeyAsset.parentElement;
+        if (userKeyAsset) {
+          assetsParent.removeChild(userKeyAsset);
+        }
+        const newAsset = document.createElement('a-asset-item');
+        newAsset.id = 'userkeymodel';
+        newAsset.setAttribute('crossorigin', 'anonymous');
+        newAsset.setAttribute('preload', 'auto');
+        newAsset.setAttribute('src', newUrl);
+        assetsParent.appendChild(newAsset);
+        // Wait for asset to load, then update the model entity
+        newAsset.addEventListener('error', () => {
+          showError('Failed to load 3D model. Reverting to default.');
+          if (newUrl !== defaultKeyModelUrl) {
+            updateKeyModel(defaultKeyModelUrl, false);
+          }
+        }, { once: true });
+        newAsset.addEventListener('load', () => {
+          // Remove and re-add gltf-model attribute for robust reload
+          if (playbuttonkey) {
+            playbuttonkey.removeAttribute('gltf-model');
+            setTimeout(() => {
+              playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
+              // After model is set, also re-apply scale and rotation from UI
+              const scale = parseFloat(keyModelScaleInput.value);
+              playbuttonkey.setAttribute('scale', `${scale} ${scale} ${scale}`);
+              playbuttonkey.setAttribute('rotation', `${modelRotateX.value} ${modelRotateY.value} ${modelRotateZ.value}`);
+            }, 75);
+          }
+        }, { once: true });
+      }
+
+      // --- Model URL input ---
+      keyModelUrlInput.addEventListener('change', e => {
+        const url = e.target.value.trim();
+        if (lastFileUrl) {
+          URL.revokeObjectURL(lastFileUrl);
+          lastFileUrl = null;
+        }
+        updateKeyModel(url, false);
+      });
+
+      // --- Model file upload ---
+      keyModelFileInput.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (file) {
+          if (lastFileUrl) URL.revokeObjectURL(lastFileUrl);
+          const url = URL.createObjectURL(file);
+          lastFileUrl = url;
+          keyModelUrlInput.value = '';
+          updateKeyModel(url, true);
+        }
+      });
+
+      // --- Model scale and rotation controls ---
+      keyModelScaleInput.addEventListener('input', e => {
+        const scale = parseFloat(e.target.value);
+        keyModelScaleValue.textContent = scale;
+        if (playbuttonkey) playbuttonkey.setAttribute('scale', `${scale} ${scale} ${scale}`);
+      });
+      // Rotation sliders
+      function updateModelRotation() {
+        if (playbuttonkey) {
+          playbuttonkey.setAttribute('rotation', `${modelRotateX.value} ${modelRotateY.value} ${modelRotateZ.value}`);
+        }
+      }
+      modelRotateX.addEventListener('input', e => {
+        modelRotateXValue.textContent = e.target.value;
+        updateModelRotation();
+      });
+      modelRotateY.addEventListener('input', e => {
+        modelRotateYValue.textContent = e.target.value;
+        updateModelRotation();
+      });
+      modelRotateZ.addEventListener('input', e => {
+        modelRotateZValue.textContent = e.target.value;
+        updateModelRotation();
+      });
+      // Initial model load (ensure robust reload on page load)
+      setTimeout(() => {
+        updateKeyModel(defaultKeyModelUrl, false);
+      }, 100);
       // Set default values
       keyModelUrlInput.value = defaultKeyModelUrl;
       keyModelScaleInput.value = 0.5;
