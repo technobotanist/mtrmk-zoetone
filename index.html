@@ -131,7 +131,7 @@
       // State
       let currentModelUrl = defaultKeyModelUrl;
       let lastFileUrl = null;
-      // --- Robust Model Reload Logic ---
+      // --- Hybrid Model Reload Logic: minimal, robust, and user-friendly ---
       function updateKeyModel(newUrl, isFile = false) {
         clearError();
         if (!newUrl) newUrl = defaultKeyModelUrl;
@@ -140,35 +140,25 @@
           URL.revokeObjectURL(lastFileUrl);
           lastFileUrl = null;
         }
-        // Always get the latest userkeymodel asset
-        let userKeyAssetCurrent = document.getElementById('userkeymodel');
-        let assetsParent = userKeyAssetCurrent ? userKeyAssetCurrent.parentElement : document.querySelector('a-assets');
-        if (userKeyAssetCurrent && assetsParent) {
-          assetsParent.removeChild(userKeyAssetCurrent);
+        // Minimal: just update the asset src and re-apply gltf-model
+        const userKeyAsset = document.getElementById('userkeymodel');
+        if (userKeyAsset) {
+          userKeyAsset.setAttribute('src', newUrl);
         }
-        const newAsset = document.createElement('a-asset-item');
-        newAsset.id = 'userkeymodel';
-        newAsset.setAttribute('crossorigin', 'anonymous');
-        newAsset.setAttribute('preload', 'auto');
-        newAsset.setAttribute('src', newUrl);
-        assetsParent.appendChild(newAsset);
-        // Wait for asset to load, then update the model entity
-        newAsset.addEventListener('error', () => {
-          showError('Failed to load 3D model. Reverting to default.');
-          if (newUrl !== defaultKeyModelUrl) {
-            updateKeyModel(defaultKeyModelUrl, false);
-          }
-        }, { once: true });
-        newAsset.addEventListener('load', () => {
-          if (playbuttonkey) {
-            playbuttonkey.removeAttribute('gltf-model');
-            setTimeout(() => {
-              playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
-            }, 50);
-          }
-        }, { once: true });
-        // Listen for model-loaded event to set scale/rotation after model is ready
         if (playbuttonkey) {
+          playbuttonkey.removeAttribute('gltf-model');
+          // Wait a tick for asset update
+          setTimeout(() => {
+            playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
+          }, 30);
+          // Always re-apply scale and rotation after model loads
+          playbuttonkey.addEventListener('model-error', function onModelError() {
+            playbuttonkey.removeEventListener('model-error', onModelError);
+            showError('Failed to load 3D model. Reverting to default.');
+            if (newUrl !== defaultKeyModelUrl) {
+              updateKeyModel(defaultKeyModelUrl, false);
+            }
+          });
           playbuttonkey.addEventListener('model-loaded', function setTransformAfterModel() {
             playbuttonkey.removeEventListener('model-loaded', setTransformAfterModel);
             const scale = parseFloat(keyModelScaleInput.value);
