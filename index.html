@@ -66,8 +66,22 @@
       <div id="orbitControls" style="margin-top: 1em; background: rgba(40,40,40,0.5); padding: 0.5em; border-radius: 6px;">
         <span style="font-weight: bold;">Camera Orbit</span>
         <label style="display: block; margin-top: 0.5em;">
-          <input type="checkbox" id="orbitCameraCheckbox"> Enable Random Camera Orbit
+          <input type="checkbox" id="orbitCameraCheckbox"> Enable Camera Orbit
         </label>
+        <div id="orbitSliders" style="margin-top: 0.5em;">
+          <label style="display: block;">Radius:
+            <input type="range" id="orbitRadius" min="4" max="40" step="0.1" value="20" style="width: 8em;">
+            <span id="orbitRadiusValue">20</span>
+          </label>
+          <label style="display: block;">Height (Y):
+            <input type="range" id="orbitHeight" min="-10" max="20" step="0.1" value="4" style="width: 8em;">
+            <span id="orbitHeightValue">4</span>
+          </label>
+          <label style="display: block;">Speed:
+            <input type="range" id="orbitSpeed" min="0.001" max="0.05" step="0.001" value="0.01" style="width: 8em;">
+            <span id="orbitSpeedValue">0.01</span>
+          </label>
+        </div>
       </div>
     </div>
   </div>
@@ -132,122 +146,34 @@
           errorMessageDiv.style.display = 'none';
         }
       }
-      function updateKeyModel(url, isFile) {
-        if (isFile && lastFileUrl) {
-          URL.revokeObjectURL(lastFileUrl);
-        }
-        if (typeof url !== 'string' || !url.trim()) {
-          url = defaultKeyModelUrl;
-        }
-        currentModelUrl = url;
-        modelLoadFallbackTriggered = false;
-        clearError();
-        if (url && typeof url === 'string' && url.trim()) {
-          userKeyAsset.setAttribute('src', url);
-          playbuttonkey.removeAttribute('gltf-model');
-          // Wait for asset to load before setting gltf-model
-          const onAssetLoaded = () => {
-            playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
-            userKeyAsset.removeEventListener('loaded', onAssetLoaded);
-            userKeyAsset.removeEventListener('error', onAssetError);
-            clearError();
-          };
-          const onAssetError = () => {
-            if (!modelLoadFallbackTriggered) {
-              modelLoadFallbackTriggered = true;
-              showError('Failed to load model. Reverting to default.');
-              userKeyAsset.setAttribute('src', defaultKeyModelUrl);
-              // Wait for default to load, then set gltf-model
-              const onDefaultLoaded = () => {
-                playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
-                userKeyAsset.removeEventListener('loaded', onDefaultLoaded);
-                clearError();
-              };
-              const onDefaultError = () => {
-                showError('Failed to load both user and default model.');
-                userKeyAsset.removeEventListener('error', onDefaultError);
-              };
-              userKeyAsset.addEventListener('loaded', onDefaultLoaded);
-              userKeyAsset.addEventListener('error', onDefaultError);
-            }
-          };
-          userKeyAsset.addEventListener('loaded', onAssetLoaded);
-          userKeyAsset.addEventListener('error', onAssetError);
-          // Fallback: if asset fails to load in 2s, revert to default (debounced)
-          setTimeout(() => {
-            if (!userKeyAsset.hasLoaded && !modelLoadFallbackTriggered) {
-              onAssetError();
-            }
-          }, 2000);
-        }
-        if (isFile) lastFileUrl = url;
-      }
-      // On initial load, wait for asset to load before setting gltf-model, with error handling
-      if (userKeyAsset && playbuttonkey) {
-        playbuttonkey.removeAttribute('gltf-model');
-        const onInitialAssetLoaded = () => {
-          playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
-          userKeyAsset.removeEventListener('loaded', onInitialAssetLoaded);
-          userKeyAsset.removeEventListener('error', onInitialAssetError);
-          clearError();
-        };
-        const onInitialAssetError = () => {
-          showError('Failed to load default model.');
-          userKeyAsset.removeEventListener('error', onInitialAssetError);
-        };
-        userKeyAsset.addEventListener('loaded', onInitialAssetLoaded);
-        userKeyAsset.addEventListener('error', onInitialAssetError);
-      }
-      function updateKeyScale() {
-        const userScale = parseFloat(keyModelScaleInput.value) || 0.5;
-        playbuttonkey.setAttribute('scale', `${userScale} ${userScale} ${userScale}`);
-        keyModelScaleValue.textContent = userScale.toFixed(2);
-      }
-      function updateModelRotation() {
-        const x = parseFloat(modelRotateX.value) || 0;
-        const y = parseFloat(modelRotateY.value) || 0;
-        const z = parseFloat(modelRotateZ.value) || 0;
-        modelRotateXValue.textContent = x;
-        modelRotateYValue.textContent = y;
-        modelRotateZValue.textContent = z;
-        playbuttonkey.setAttribute('rotation', `${x} ${y} ${z}`);
-      }
-      modelRotateX.addEventListener('input', updateModelRotation);
-      modelRotateY.addEventListener('input', updateModelRotation);
-      modelRotateZ.addEventListener('input', updateModelRotation);
-      keyModelUrlInput.addEventListener('change', () => {
-        const url = keyModelUrlInput.value.trim();
-        if (url) {
-          updateKeyModel(url, false);
-        } else {
-          updateKeyModel(defaultKeyModelUrl, false);
-          keyModelUrlInput.value = defaultKeyModelUrl;
-        }
-      });
-      keyModelScaleInput.addEventListener('input', updateKeyScale);
-      keyModelFileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          const url = URL.createObjectURL(file);
-          updateKeyModel(url, true);
-        }
-      });
-      // Initialize
-      updateKeyModel(defaultKeyModelUrl, false);
-      updateKeyScale();
-      updateModelRotation();
-      // --- Camera Orbit ---
-      // Only move the rig, let look-at handle orientation
+      // --- Camera Orbit with Sliders ---
       const orbitCheckbox = document.getElementById('orbitCameraCheckbox');
+      const orbitRadiusSlider = document.getElementById('orbitRadius');
+      const orbitHeightSlider = document.getElementById('orbitHeight');
+      const orbitSpeedSlider = document.getElementById('orbitSpeed');
+      const orbitRadiusValue = document.getElementById('orbitRadiusValue');
+      const orbitHeightValue = document.getElementById('orbitHeightValue');
+      const orbitSpeedValue = document.getElementById('orbitSpeedValue');
       let orbitRequest = null;
       let orbitAngle = 0;
-      let orbitSpeed = 0.005 + Math.random() * 0.01;
-      let orbitRadius = 16 + Math.random() * 6;
-      let orbitHeight = 2 + Math.random() * 2;
+      let orbitSpeed = parseFloat(orbitSpeedSlider.value);
+      let orbitRadius = parseFloat(orbitRadiusSlider.value);
+      let orbitHeight = parseFloat(orbitHeightSlider.value);
       const rig = document.getElementById('rig');
       const zoetonecomplex = document.getElementById('zoetonecomplex');
       const defaultRigPos = {x: 0, y: 0, z: 0};
       const defaultZoetoneRot = {x: 0, y: 0, z: 0};
+      function updateOrbitParams() {
+        orbitRadius = parseFloat(orbitRadiusSlider.value);
+        orbitHeight = parseFloat(orbitHeightSlider.value);
+        orbitSpeed = parseFloat(orbitSpeedSlider.value);
+        orbitRadiusValue.textContent = orbitRadius;
+        orbitHeightValue.textContent = orbitHeight;
+        orbitSpeedValue.textContent = orbitSpeed;
+      }
+      orbitRadiusSlider.addEventListener('input', updateOrbitParams);
+      orbitHeightSlider.addEventListener('input', updateOrbitParams);
+      orbitSpeedSlider.addEventListener('input', updateOrbitParams);
       function animateOrbit() {
         orbitAngle += orbitSpeed;
         const x = Math.cos(orbitAngle) * orbitRadius;
@@ -258,9 +184,7 @@
       function startOrbit() {
         if (orbitRequest) return;
         orbitAngle = Math.random() * Math.PI * 2;
-        orbitSpeed = 0.005 + Math.random() * 0.01;
-        orbitRadius = 16 + Math.random() * 6;
-        orbitHeight = 2 + Math.random() * 2;
+        updateOrbitParams();
         // Randomize zoetonecomplex Y rotation for dynamic view
         if (zoetonecomplex) {
           const randomY = Math.floor(Math.random() * 360);
@@ -351,18 +275,19 @@
         existingAudios[i].remove();
       }
 
-      // Add or update audio elements up to count
+      // Add or update audio elements up to count (robust soft reload)
       for (let i = 0; i < count; i++) {
         let audio = document.getElementById(`lane${i+1}`);
-        if (!audio) {
-          audio = document.createElement('audio');
-          audio.id = `lane${i+1}`;
-          audio.className = `music${i+1}`;
-          audio.setAttribute('crossorigin', 'anonymous');
-          audio.setAttribute('preload', 'auto');
-          audioAssets.appendChild(audio);
+        if (audio) {
+          audio.remove();
         }
+        audio = document.createElement('audio');
+        audio.id = `lane${i+1}`;
+        audio.className = `music${i+1}`;
+        audio.setAttribute('crossorigin', 'anonymous');
+        audio.setAttribute('preload', 'auto');
         audio.src = prevUrls[i] || defaultTracks[i] || '';
+        audioAssets.appendChild(audio);
         if (!playing) audio.pause();
       }
 
@@ -532,7 +457,7 @@
 <a-asset-item id="messageText" src="message.html"></a-asset-item>
 
 <!--TR Magic Key Brand Fonts -->
-<a-asset-item id="magickeytitlingfont" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MagicKeyTitlingFont.ttf"></a-asset-item>
+<a-asset-item id="magickeytitlingfont" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_MagicKeyTitlingFont.ttf"></a-asset-item>
 
  <a-mixin   
           id="splashaway"
