@@ -46,10 +46,10 @@
     </div>
     <div id="trackInputs" style="margin-top: 0.5em;"></div>
     <div id="modelControls" style="margin-top: 1em; padding: 0.5em; background: rgba(30,30,30,0.7); border-radius: 6px;">
-      <label style="display: block; margin-bottom: 0.5em;">Key Model URL:
+      <label style="display: block; margin-bottom: 0.5em;">3D Model URL:
         <input type="url" id="keyModelUrl" placeholder="Paste .glb/.gltf URL or leave for default" style="width: 20em;">
       </label>
-      <label style="display: block;">Key Model Scale:
+      <label style="display: block;">3D Model Scale:
         <input type="range" id="keyModelScale" min="0.1" max="3" step="0.01" value="0.5" style="width: 10em;">
         <span id="keyModelScaleValue">0.5</span>
       </label>
@@ -98,9 +98,12 @@
         if (isFile && lastFileUrl) {
           URL.revokeObjectURL(lastFileUrl);
         }
-        if (!url) url = currentModelUrl || defaultKeyModelUrl;
+        // Only set src if url is a non-empty string
+        if (typeof url !== 'string' || !url.trim()) {
+          url = defaultKeyModelUrl;
+        }
         currentModelUrl = url;
-        if (url) {
+        if (url && typeof url === 'string' && url.trim()) {
           userKeyAsset.setAttribute('src', url);
           playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
         }
