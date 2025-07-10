@@ -127,9 +127,19 @@
         if (url && typeof url === 'string' && url.trim()) {
           userKeyAsset.setAttribute('src', url);
           playbuttonkey.removeAttribute('gltf-model');
-          setTimeout(() => {
+          // Wait for asset to load before setting gltf-model
+          const onAssetLoaded = () => {
             playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
-          }, 50);
+            userKeyAsset.removeEventListener('loaded', onAssetLoaded);
+          };
+          userKeyAsset.addEventListener('loaded', onAssetLoaded);
+          // Fallback: if asset fails to load in 2s, revert to default
+          setTimeout(() => {
+            if (!userKeyAsset.hasLoaded) {
+              userKeyAsset.setAttribute('src', defaultKeyModelUrl);
+              playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
+            }
+          }, 2000);
         }
         if (isFile) lastFileUrl = url;
       }
@@ -295,20 +305,49 @@
 
       // Update the UI inputs
       trackInputsDiv.innerHTML = '';
+      // Store last object URLs to revoke on new upload
+      if (!window._audioFileObjectUrls) window._audioFileObjectUrls = Array(6).fill(null);
       for (let i = 0; i < count; i++) {
         const audio = document.getElementById(`lane${i+1}`);
         const label = document.createElement('label');
         label.style.display = 'block';
         label.textContent = `Channel ${i+1}: `;
+        // URL input
         const urlInput = document.createElement('input');
         urlInput.type = 'url';
         urlInput.placeholder = 'Paste audio URL or leave for default';
         urlInput.value = audio.src;
         urlInput.style.width = '20em';
         urlInput.addEventListener('change', e => {
+          // Revoke previous object URL if present
+          if (window._audioFileObjectUrls[i]) {
+            URL.revokeObjectURL(window._audioFileObjectUrls[i]);
+            window._audioFileObjectUrls[i] = null;
+          }
           audio.src = e.target.value;
         });
         label.appendChild(urlInput);
+        // Upload button
+        const uploadInput = document.createElement('input');
+        uploadInput.type = 'file';
+        uploadInput.accept = 'audio/*';
+        uploadInput.style.marginLeft = '0.5em';
+        uploadInput.title = 'Upload audio file for this channel';
+        uploadInput.addEventListener('change', e => {
+          const file = e.target.files[0];
+          if (file) {
+            // Revoke previous object URL if present
+            if (window._audioFileObjectUrls[i]) {
+              URL.revokeObjectURL(window._audioFileObjectUrls[i]);
+            }
+            const url = URL.createObjectURL(file);
+            audio.src = url;
+            window._audioFileObjectUrls[i] = url;
+            // Also update the URL input to show [Local File]
+            urlInput.value = '';
+          }
+        });
+        label.appendChild(uploadInput);
         trackInputsDiv.appendChild(label);
       }
 
@@ -391,10 +430,10 @@
     </script>
 
 <!--Brand 3 Models -->        
-<a-asset-item id="magickey" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MTRMagicKeyTrueOrigin.gltf" preload="auto"></a-asset-item>
-<a-asset-item id="userkeymodel" crossorigin="anonymous" preload="auto" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MTRMagicKeyTrueOrigin.gltf"></a-asset-item>
-<a-asset-item id="whitemagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_WhiteMTRMagicKeyText.glb" preload="auto"></a-asset-item>
-<a-asset-item id="silvermagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_SilverMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="magickey" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_MTRMagicKeyTrueOrigin.gltf" preload="auto"></a-asset-item>
+<a-asset-item id="userkeymodel" crossorigin="anonymous" preload="auto" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_MTRMagicKeyTrueOrigin.gltf"></a-asset-item>
+<a-asset-item id="whitemagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_WhiteMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="silvermagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_SilverMTRMagicKeyText.glb" preload="auto"></a-asset-item>
 <a-asset-item id="goldmagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_GoldMTRMagicKeyText.glb" preload="auto"></a-asset-item>
 <a-asset-item id="pinkmagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_PinkMTRMagicKeyText.glb" preload="auto"></a-asset-item>
 <a-asset-item id="bluemagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_BlueMTRMagicKeyText.glb" preload="auto"></a-asset-item>
@@ -559,11 +598,10 @@ MTR Magic Key
    
   
                        
-                       
-Raleigh, NC; 
+                       Raleigh, NC; 
                        align: center; 
                        color: #f9dea2; 
-                       font: https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_MagicKeyTitlingFont.ttf; 
+                       font: #magickeytitlingfont; 
                        fontSize: 3; fillOpacity:  0.5;  
                        outlineBlur:  0.34;  outlineColor:  #8c8c8c;  outlineOpacity:  0.64;  outlineWidth:  0.02;  
                        strokeColor:  #f9dea2;  strokeOpacity:  4.01;  strokeWidth:  0.05"
