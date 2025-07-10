@@ -46,6 +46,7 @@
     </div>
     <div id="trackInputs" style="margin-top: 0.5em;"></div>
     <div id="modelControls" style="margin-top: 1em; padding: 0.5em; background: rgba(30,30,30,0.7); border-radius: 6px;">
+      <div id="errorMessage" style="color: #ff6a6a; font-weight: bold; margin-bottom: 0.5em; display: none;"></div>
       <label style="display: block; margin-bottom: 0.5em;">3D Model URL:
         <input type="url" id="keyModelUrl" placeholder="Paste .glb/.gltf URL or leave for default" style="width: 20em;">
       </label>
@@ -116,6 +117,21 @@
       modelRotateXValue.textContent = '49.8';
       modelRotateYValue.textContent = '125.5';
       modelRotateZValue.textContent = '128';
+      // --- Model Loading Robustness ---
+      let modelLoadFallbackTriggered = false;
+      const errorMessageDiv = document.getElementById('errorMessage');
+      function showError(msg) {
+        if (errorMessageDiv) {
+          errorMessageDiv.textContent = msg;
+          errorMessageDiv.style.display = '';
+        }
+      }
+      function clearError() {
+        if (errorMessageDiv) {
+          errorMessageDiv.textContent = '';
+          errorMessageDiv.style.display = 'none';
+        }
+      }
       function updateKeyModel(url, isFile) {
         if (isFile && lastFileUrl) {
           URL.revokeObjectURL(lastFileUrl);
@@ -124,6 +140,8 @@
           url = defaultKeyModelUrl;
         }
         currentModelUrl = url;
+        modelLoadFallbackTriggered = false;
+        clearError();
         if (url && typeof url === 'string' && url.trim()) {
           userKeyAsset.setAttribute('src', url);
           playbuttonkey.removeAttribute('gltf-model');
@@ -131,31 +149,54 @@
           const onAssetLoaded = () => {
             playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
             userKeyAsset.removeEventListener('loaded', onAssetLoaded);
+            userKeyAsset.removeEventListener('error', onAssetError);
+            clearError();
           };
-          userKeyAsset.addEventListener('loaded', onAssetLoaded);
-          // Fallback: if asset fails to load in 2s, revert to default
-          setTimeout(() => {
-            if (!userKeyAsset.hasLoaded) {
+          const onAssetError = () => {
+            if (!modelLoadFallbackTriggered) {
+              modelLoadFallbackTriggered = true;
+              showError('Failed to load model. Reverting to default.');
               userKeyAsset.setAttribute('src', defaultKeyModelUrl);
               // Wait for default to load, then set gltf-model
               const onDefaultLoaded = () => {
                 playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
                 userKeyAsset.removeEventListener('loaded', onDefaultLoaded);
+                clearError();
+              };
+              const onDefaultError = () => {
+                showError('Failed to load both user and default model.');
+                userKeyAsset.removeEventListener('error', onDefaultError);
               };
               userKeyAsset.addEventListener('loaded', onDefaultLoaded);
+              userKeyAsset.addEventListener('error', onDefaultError);
+            }
+          };
+          userKeyAsset.addEventListener('loaded', onAssetLoaded);
+          userKeyAsset.addEventListener('error', onAssetError);
+          // Fallback: if asset fails to load in 2s, revert to default (debounced)
+          setTimeout(() => {
+            if (!userKeyAsset.hasLoaded && !modelLoadFallbackTriggered) {
+              onAssetError();
             }
           }, 2000);
         }
         if (isFile) lastFileUrl = url;
       }
-      // On initial load, wait for asset to load before setting gltf-model
+      // On initial load, wait for asset to load before setting gltf-model, with error handling
       if (userKeyAsset && playbuttonkey) {
         playbuttonkey.removeAttribute('gltf-model');
         const onInitialAssetLoaded = () => {
           playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
           userKeyAsset.removeEventListener('loaded', onInitialAssetLoaded);
+          userKeyAsset.removeEventListener('error', onInitialAssetError);
+          clearError();
+        };
+        const onInitialAssetError = () => {
+          showError('Failed to load default model.');
+          userKeyAsset.removeEventListener('error', onInitialAssetError);
         };
         userKeyAsset.addEventListener('loaded', onInitialAssetLoaded);
+        userKeyAsset.addEventListener('error', onInitialAssetError);
       }
       function updateKeyScale() {
         const userScale = parseFloat(keyModelScaleInput.value) || 0.5;
@@ -347,8 +388,13 @@
             window._audioFileObjectUrls[i] = null;
           }
           audio.src = e.target.value;
+          // Error handling for audio load
+          audio.onerror = () => {
+            showError(`Audio channel ${i+1} failed to load. Please check the URL or try another file.`);
+          };
           // Trigger canplay event and re-apply audioanalyser
           audio.addEventListener('canplay', () => {
+            clearError();
             const visIds = ['Silver', 'Blue', 'Gold', 'Pink', 'Green', 'White'];
             const ent = document.getElementById(visIds[i]);
             if (ent) {
@@ -375,8 +421,13 @@
             window._audioFileObjectUrls[i] = url;
             // Also update the URL input to show [Local File]
             urlInput.value = '';
+            // Error handling for audio load
+            audio.onerror = () => {
+              showError(`Audio channel ${i+1} failed to load. Please try another file.`);
+            };
             // Trigger canplay event and re-apply audioanalyser
             audio.addEventListener('canplay', () => {
+              clearError();
               const visIds = ['Silver', 'Blue', 'Gold', 'Pink', 'Green', 'White'];
               const ent = document.getElementById(visIds[i]);
               if (ent) {
@@ -481,7 +532,7 @@
 <a-asset-item id="messageText" src="message.html"></a-asset-item>
 
 <!--TR Magic Key Brand Fonts -->
-<a-asset-item id="magickeytitlingfont" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_MagicKeyTitlingFont.ttf"></a-asset-item>
+<a-asset-item id="magickeytitlingfont" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MagicKeyTitlingFont.ttf"></a-asset-item>
 
  <a-mixin   
           id="splashaway"
