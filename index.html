@@ -57,6 +57,9 @@
       <label style="display: block; margin-top: 0.5em;">Or upload a 3D model:
         <input type="file" id="keyModelFile" accept=".glb,.gltf,model/gltf-binary,model/gltf+json">
       </label>
+      <div id="fileUploadWarning" style="color: #ffb347; font-size: 0.95em; font-weight: bold; margin-top: 0.3em; display: none;">
+        ⚠️ 3D model file uploads only work when running locally (http://localhost or file://). On GitHub Pages or remote HTTPS, browser security blocks uploads. Use a model URL instead.
+      </div>
       <div id="modelTransformControls" style="margin-top: 0.5em; background: rgba(40,40,40,0.5); padding: 0.5em; border-radius: 6px;">
         <span style="font-weight: bold;">Model Rotation</span>
         <label style="display: block;">X: <input type="range" id="modelRotateX" min="0" max="360" step="0.1" value="49.8" style="width: 8em;"> <span id="modelRotateXValue">49.8</span>°</label>
@@ -131,6 +134,18 @@
       // State
       let currentModelUrl = defaultKeyModelUrl;
       let lastFileUrl = null;
+      // --- Show file upload warning if not local ---
+      const fileUploadWarning = document.getElementById('fileUploadWarning');
+      function isLocalhost() {
+        return (
+          window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1' ||
+          window.location.protocol === 'file:'
+        );
+      }
+      if (fileUploadWarning && !isLocalhost()) {
+        fileUploadWarning.style.display = '';
+      }
       // --- Hybrid Model Reload Logic: minimal, robust, and user-friendly ---
       function updateKeyModel(newUrl, isFile = false) {
         clearError();
@@ -185,11 +200,21 @@
       keyModelFileInput.addEventListener('change', e => {
         const file = e.target.files[0];
         if (file) {
-          if (lastFileUrl) URL.revokeObjectURL(lastFileUrl);
-          const url = URL.createObjectURL(file);
-          lastFileUrl = url;
-          keyModelUrlInput.value = '';
-          updateKeyModel(url, true);
+          // Only allow files up to 2MB for Data URL (browser limit)
+          if (file.size > 2 * 1024 * 1024) {
+            showError('3D model file too large. Please use a file under 2MB.');
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            const dataUrl = evt.target.result;
+            keyModelUrlInput.value = '';
+            updateKeyModel(dataUrl, false); // treat as normal URL
+          };
+          reader.onerror = function() {
+            showError('Failed to read 3D model file.');
+          };
+          reader.readAsDataURL(file);
         }
       });
 
