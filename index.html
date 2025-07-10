@@ -137,11 +137,25 @@
           setTimeout(() => {
             if (!userKeyAsset.hasLoaded) {
               userKeyAsset.setAttribute('src', defaultKeyModelUrl);
-              playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
+              // Wait for default to load, then set gltf-model
+              const onDefaultLoaded = () => {
+                playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
+                userKeyAsset.removeEventListener('loaded', onDefaultLoaded);
+              };
+              userKeyAsset.addEventListener('loaded', onDefaultLoaded);
             }
           }, 2000);
         }
         if (isFile) lastFileUrl = url;
+      }
+      // On initial load, wait for asset to load before setting gltf-model
+      if (userKeyAsset && playbuttonkey) {
+        playbuttonkey.removeAttribute('gltf-model');
+        const onInitialAssetLoaded = () => {
+          playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
+          userKeyAsset.removeEventListener('loaded', onInitialAssetLoaded);
+        };
+        userKeyAsset.addEventListener('loaded', onInitialAssetLoaded);
       }
       function updateKeyScale() {
         const userScale = parseFloat(keyModelScaleInput.value) || 0.5;
@@ -190,7 +204,9 @@
       let orbitRadius = 16 + Math.random() * 6;
       let orbitHeight = 2 + Math.random() * 2;
       const rig = document.getElementById('rig');
+      const zoetonecomplex = document.getElementById('zoetonecomplex');
       const defaultRigPos = {x: 0, y: 0, z: 0};
+      const defaultZoetoneRot = {x: 0, y: 0, z: 0};
       function animateOrbit() {
         orbitAngle += orbitSpeed;
         const x = Math.cos(orbitAngle) * orbitRadius;
@@ -204,6 +220,11 @@
         orbitSpeed = 0.005 + Math.random() * 0.01;
         orbitRadius = 16 + Math.random() * 6;
         orbitHeight = 2 + Math.random() * 2;
+        // Randomize zoetonecomplex Y rotation for dynamic view
+        if (zoetonecomplex) {
+          const randomY = Math.floor(Math.random() * 360);
+          zoetonecomplex.setAttribute('rotation', `0 ${randomY} 0`);
+        }
         orbitRequest = requestAnimationFrame(animateOrbit);
       }
       function stopOrbit() {
@@ -212,6 +233,7 @@
           orbitRequest = null;
         }
         if (rig) rig.setAttribute('position', `${defaultRigPos.x} ${defaultRigPos.y} ${defaultRigPos.z}`);
+        if (zoetonecomplex) zoetonecomplex.setAttribute('rotation', `${defaultZoetoneRot.x} ${defaultZoetoneRot.y} ${defaultZoetoneRot.z}`);
       }
       if (orbitCheckbox) {
         orbitCheckbox.addEventListener('change', () => {
@@ -325,6 +347,14 @@
             window._audioFileObjectUrls[i] = null;
           }
           audio.src = e.target.value;
+          // Trigger canplay event and re-apply audioanalyser
+          audio.addEventListener('canplay', () => {
+            const visIds = ['Silver', 'Blue', 'Gold', 'Pink', 'Green', 'White'];
+            const ent = document.getElementById(visIds[i]);
+            if (ent) {
+              ent.setAttribute('audioanalyser', `src: #lane${i+1}; enabled: true`);
+            }
+          }, { once: true });
         });
         label.appendChild(urlInput);
         // Upload button
@@ -345,6 +375,14 @@
             window._audioFileObjectUrls[i] = url;
             // Also update the URL input to show [Local File]
             urlInput.value = '';
+            // Trigger canplay event and re-apply audioanalyser
+            audio.addEventListener('canplay', () => {
+              const visIds = ['Silver', 'Blue', 'Gold', 'Pink', 'Green', 'White'];
+              const ent = document.getElementById(visIds[i]);
+              if (ent) {
+                ent.setAttribute('audioanalyser', `src: #lane${i+1}; enabled: true`);
+              }
+            }, { once: true });
           }
         });
         label.appendChild(uploadInput);
@@ -443,7 +481,7 @@
 <a-asset-item id="messageText" src="message.html"></a-asset-item>
 
 <!--TR Magic Key Brand Fonts -->
-<a-asset-item id="magickeytitlingfont" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MagicKeyTitlingFont.ttf"></a-asset-item>
+<a-asset-item id="magickeytitlingfont" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_MagicKeyTitlingFont.ttf"></a-asset-item>
 
  <a-mixin   
           id="splashaway"
