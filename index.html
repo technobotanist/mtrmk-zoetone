@@ -45,6 +45,18 @@
       </div>
     </div>
     <div id="trackInputs" style="margin-top: 0.5em;"></div>
+    <div id="modelControls" style="margin-top: 1em; padding: 0.5em; background: rgba(30,30,30,0.7); border-radius: 6px;">
+      <label style="display: block; margin-bottom: 0.5em;">Key Model URL:
+        <input type="url" id="keyModelUrl" placeholder="Paste .glb/.gltf URL or leave for default" style="width: 20em;">
+      </label>
+      <label style="display: block;">Key Model Scale:
+        <input type="range" id="keyModelScale" min="0.1" max="3" step="0.01" value="0.5" style="width: 10em;">
+        <span id="keyModelScaleValue">0.5</span>
+      </label>
+      <label style="display: block; margin-top: 0.5em;">Or upload a 3D model:
+        <input type="file" id="keyModelFile" accept=".glb,.gltf,model/gltf-binary,model/gltf+json">
+      </label>
+    </div>
   </div>
 
   <a-scene info-message="htmlSrc: #messageText">
@@ -61,6 +73,55 @@
       "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane5wailsynth.mp3",
       "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane6midgroundsynth.mp3"
     ];
+
+    // --- Key Model Dynamic Controls ---
+    const defaultKeyModelUrl = "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MTRMagicKeyTrueOrigin.gltf";
+    window.addEventListener('DOMContentLoaded', () => {
+      // Key Model Controls
+      const keyModelUrlInput = document.getElementById('keyModelUrl');
+      const keyModelScaleInput = document.getElementById('keyModelScale');
+      const keyModelScaleValue = document.getElementById('keyModelScaleValue');
+      const keyModelFileInput = document.getElementById('keyModelFile');
+      const userKeyAsset = document.getElementById('userkeymodel');
+      const playbuttonkey = document.getElementById('playbuttonkey');
+      let currentModelUrl = defaultKeyModelUrl;
+
+      // Set default values
+      keyModelUrlInput.value = defaultKeyModelUrl;
+      keyModelScaleInput.value = 0.5;
+      keyModelScaleValue.textContent = '0.5';
+
+      // Update asset and entity
+      function updateKeyModel(url) {
+        if (!url) url = defaultKeyModelUrl;
+        currentModelUrl = url;
+        userKeyAsset.setAttribute('src', url);
+        playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
+      }
+      function updateKeyScale() {
+        const scale = parseFloat(keyModelScaleInput.value) || 0.5;
+        playbuttonkey.setAttribute('scale', `${scale} ${scale} ${scale}`);
+        keyModelScaleValue.textContent = scale.toFixed(2);
+      }
+
+      keyModelUrlInput.addEventListener('change', () => {
+        updateKeyModel(keyModelUrlInput.value.trim());
+      });
+      keyModelScaleInput.addEventListener('input', updateKeyScale);
+
+      keyModelFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const url = URL.createObjectURL(file);
+          updateKeyModel(url);
+          keyModelUrlInput.value = '';
+        }
+      });
+
+      // Initialize
+      updateKeyModel(defaultKeyModelUrl);
+      updateKeyScale();
+    });
 
     // Helper: get current track URLs from audio elements (if present)
     function getCurrentTrackUrls() {
@@ -236,6 +297,7 @@
 
 <!--Brand 3 Models -->        
 <a-asset-item id="magickey" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MTRMagicKeyTrueOrigin.gltf" preload="auto"></a-asset-item>
+<a-asset-item id="userkeymodel" crossorigin="anonymous" preload="auto"></a-asset-item>
 <a-asset-item id="whitemagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_WhiteMTRMagicKeyText.glb" preload="auto"></a-asset-item>
 <a-asset-item id="silvermagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_SilverMTRMagicKeyText.glb" preload="auto"></a-asset-item>
 <a-asset-item id="goldmagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_GoldMTRMagicKeyText.glb" preload="auto"></a-asset-item>
@@ -416,8 +478,8 @@ Raleigh, NC;
       <a-entity id="playbuttonkey" 
                 rotation="49.8 125.5 128" 
                 position="-2.25 1 -16"
-                gltf-model="#magickey"
-                scale=".5 .5 .5"
+                gltf-model="#userkeymodel"
+                scale="0.5 0.5 0.5"
                 mixin="splashaway"
                 playtracks=""
                 class="mouse"
