@@ -105,7 +105,11 @@
         currentModelUrl = url;
         if (url && typeof url === 'string' && url.trim()) {
           userKeyAsset.setAttribute('src', url);
-          playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
+          // Force reload by removing and re-adding the attribute
+          playbuttonkey.removeAttribute('gltf-model');
+          setTimeout(() => {
+            playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
+          }, 50);
         }
         if (isFile) lastFileUrl = url;
       }
