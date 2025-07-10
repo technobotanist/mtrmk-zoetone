@@ -35,6 +35,26 @@
 <body>
 
   <div id="channel-controls" style="position: absolute; z-index: 10;  color: #fff; padding: 1em; border-radius: 8px; top: 1em; left: 1em; min-width: 18em;">
+  <div id="rotation-controls" style="position: absolute; z-index: 10; color: #fff; padding: 1em; border-radius: 8px; top: 1em; right: 1em; min-width: 16em; background: rgba(30,30,30,0.7);">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <span style="font-weight: bold;">Zoetone Rotation</span>
+      <button id="minimizeRotationBtn" style="margin-left: 0.5em; font-size: 1em;">_</button>
+    </div>
+    <div id="rotationSliders" style="margin-top: 0.5em;">
+      <label style="display: block;">Rotate X:
+        <input type="range" id="rotateX" min="0" max="360" step="1" value="0" style="width: 10em;">
+        <span id="rotateXValue">0</span>°
+      </label>
+      <label style="display: block;">Rotate Y:
+        <input type="range" id="rotateY" min="0" max="360" step="1" value="0" style="width: 10em;">
+        <span id="rotateYValue">0</span>°
+      </label>
+      <label style="display: block;">Rotate Z:
+        <input type="range" id="rotateZ" min="0" max="360" step="1" value="0" style="width: 10em;">
+        <span id="rotateZValue">0</span>°
+      </label>
+    </div>
+  </div>
     <div style="display: flex; align-items: center; justify-content: space-between;">
       <label style="margin-bottom: 0;">Number of Channels:
         <input type="number" id="channelCount" min="0" max="6" value="6" style="width: 3em;">
@@ -50,12 +70,18 @@
         <input type="url" id="keyModelUrl" placeholder="Paste .glb/.gltf URL or leave for default" style="width: 20em;">
       </label>
       <label style="display: block;">3D Model Scale:
-        <input type="range" id="keyModelScale" min="0.1" max="3" step="0.01" value="0.5" style="width: 10em;">
+        <input type="range" id="keyModelScale" min="0.01" max="10" step="0.01" value="0.5" style="width: 10em;">
         <span id="keyModelScaleValue">0.5</span>
       </label>
       <label style="display: block; margin-top: 0.5em;">Or upload a 3D model:
         <input type="file" id="keyModelFile" accept=".glb,.gltf,model/gltf-binary,model/gltf+json">
       </label>
+      <div id="modelTransformControls" style="margin-top: 0.5em; background: rgba(40,40,40,0.5); padding: 0.5em; border-radius: 6px;">
+        <span style="font-weight: bold;">Model Rotation</span>
+        <label style="display: block;">X: <input type="range" id="modelRotateX" min="0" max="360" step="1" value="0" style="width: 8em;"> <span id="modelRotateXValue">0</span>°</label>
+        <label style="display: block;">Y: <input type="range" id="modelRotateY" min="0" max="360" step="1" value="0" style="width: 8em;"> <span id="modelRotateYValue">0</span>°</label>
+        <label style="display: block;">Z: <input type="range" id="modelRotateZ" min="0" max="360" step="1" value="0" style="width: 8em;"> <span id="modelRotateZValue">0</span>°</label>
+      </div>
     </div>
   </div>
 
@@ -63,6 +89,46 @@
     <a-assets id="audio-assets">
       <!-- Audio elements will be injected here by JS -->
     </a-assets>
+    <script>
+    // --- Zoetonecomplex Rotation Controls ---
+    window.addEventListener('DOMContentLoaded', () => {
+      const zoetone = document.getElementById('zoetonecomplex');
+      const rotateX = document.getElementById('rotateX');
+      const rotateY = document.getElementById('rotateY');
+      const rotateZ = document.getElementById('rotateZ');
+      const rotateXValue = document.getElementById('rotateXValue');
+      const rotateYValue = document.getElementById('rotateYValue');
+      const rotateZValue = document.getElementById('rotateZValue');
+      const minimizeRotationBtn = document.getElementById('minimizeRotationBtn');
+      const rotationSliders = document.getElementById('rotationSliders');
+      let minimizedRotation = false;
+
+      function updateRotation() {
+        const x = parseInt(rotateX.value, 10) || 0;
+        const y = parseInt(rotateY.value, 10) || 0;
+        const z = parseInt(rotateZ.value, 10) || 0;
+        rotateXValue.textContent = x;
+        rotateYValue.textContent = y;
+        rotateZValue.textContent = z;
+        if (zoetone) {
+          zoetone.setAttribute('rotation', `${x} ${y} ${z}`);
+        }
+      }
+
+      rotateX.addEventListener('input', updateRotation);
+      rotateY.addEventListener('input', updateRotation);
+      rotateZ.addEventListener('input', updateRotation);
+
+      minimizeRotationBtn.addEventListener('click', () => {
+        minimizedRotation = !minimizedRotation;
+        rotationSliders.style.display = minimizedRotation ? 'none' : '';
+        minimizeRotationBtn.textContent = minimizedRotation ? '▢' : '_';
+      });
+
+      // Initialize
+      updateRotation();
+    });
+    </script>
     <script>
     // --- Dynamic Channel UI and Audio Management ---
     const defaultTracks = [
@@ -114,10 +180,31 @@
         if (isFile) lastFileUrl = url;
       }
       function updateKeyScale() {
-        const scale = parseFloat(keyModelScaleInput.value) || 0.5;
-        playbuttonkey.setAttribute('scale', `${scale} ${scale} ${scale}`);
-        keyModelScaleValue.textContent = scale.toFixed(2);
+        // Use the slider value directly for scale
+        const userScale = parseFloat(keyModelScaleInput.value) || 0.5;
+        playbuttonkey.setAttribute('scale', `${userScale} ${userScale} ${userScale}`);
+        keyModelScaleValue.textContent = userScale.toFixed(2);
       }
+
+      // --- Model Rotation Controls ---
+      const modelRotateX = document.getElementById('modelRotateX');
+      const modelRotateY = document.getElementById('modelRotateY');
+      const modelRotateZ = document.getElementById('modelRotateZ');
+      const modelRotateXValue = document.getElementById('modelRotateXValue');
+      const modelRotateYValue = document.getElementById('modelRotateYValue');
+      const modelRotateZValue = document.getElementById('modelRotateZValue');
+      function updateModelRotation() {
+        const x = parseInt(modelRotateX.value, 10) || 0;
+        const y = parseInt(modelRotateY.value, 10) || 0;
+        const z = parseInt(modelRotateZ.value, 10) || 0;
+        modelRotateXValue.textContent = x;
+        modelRotateYValue.textContent = y;
+        modelRotateZValue.textContent = z;
+        playbuttonkey.setAttribute('rotation', `${x} ${y} ${z}`);
+      }
+      modelRotateX.addEventListener('input', updateModelRotation);
+      modelRotateY.addEventListener('input', updateModelRotation);
+      modelRotateZ.addEventListener('input', updateModelRotation);
 
       keyModelUrlInput.addEventListener('change', () => {
         const url = keyModelUrlInput.value.trim();
@@ -142,6 +229,7 @@
       // Initialize
       updateKeyModel(defaultKeyModelUrl, false);
       updateKeyScale();
+      updateModelRotation();
     });
 
     // Helper: get current track URLs from audio elements (if present)
