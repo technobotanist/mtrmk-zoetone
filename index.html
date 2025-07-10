@@ -45,6 +45,14 @@
       </div>
     </div>
     <div id="trackInputs" style="margin-top: 0.5em;"></div>
+    <div style="margin-top: 0.5em;">
+      <label for="demoSongSelect" style="font-weight:bold;">Demo Song:
+        <select id="demoSongSelect" style="margin-left:0.5em;">
+          <option value="ladsnight">Lad's Night</option>
+          <option value="desolate">Desolate Highway</option>
+        </select>
+      </label>
+    </div>
     <div id="modelControls" style="margin-top: 1em; padding: 0.5em; background: rgba(30,30,30,0.7); border-radius: 6px;">
       <div id="errorMessage" style="color: #ff6a6a; font-weight: bold; margin-bottom: 0.5em; display: none;"></div>
       <label style="display: block; margin-bottom: 0.5em;">3D Model URL:
@@ -58,7 +66,7 @@
         <input type="file" id="keyModelFile" accept=".glb,.gltf,model/gltf-binary,model/gltf+json">
       </label>
       <div id="fileUploadWarning" style="color: #ffb347; font-size: 0.95em; font-weight: bold; margin-top: 0.3em; display: none;">
-        ⚠️ 3D model file uploads only work when running locally (http://localhost or file://). On GitHub Pages or remote HTTPS, browser security blocks uploads. Use a model URL instead.
+        ⚠️ Keep 3D model file uploads under 2MB.
       </div>
       <div id="modelTransformControls" style="margin-top: 0.5em; background: rgba(40,40,40,0.5); padding: 0.5em; border-radius: 6px;">
         <span style="font-weight: bold;">Model Rotation</span>
@@ -97,18 +105,54 @@
     <script>
     // --- Dynamic Channel UI and Audio Management ---
     const defaultTracks = [
-      "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane1_kastelheimer.mp3",
-      "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane2_drums.mp3",
-      "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane3leadsynth.mp3",
-      "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane4backingOrgan.mp3",
-      "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane5wailsynth.mp3",
-      "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane6midgroundsynth.mp3"
+      "Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane1_kastelheimer.mp3",
+      "Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane2_drums.mp3",
+      "Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane3leadsynth.mp3",
+      "Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane4backingOrgan.mp3",
+      "Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane5wailsynth.mp3",
+      "Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_LDlane6midgroundsynth.mp3"
+    ];
+
+    const desolateTracks = [
+      "Zoetone-Demo-Assets/07 DeSalate Highway (Remix) (Backing Vocals).mp3",
+      "Zoetone-Demo-Assets/07 DeSalate Highway (Remix) (Bass).mp3",
+      "Zoetone-Demo-Assets/07 DeSalate Highway (Remix) (Drums).mp3",
+      "Zoetone-Demo-Assets/07 DeSalate Highway (Remix) (Guitar).mp3",
+      "Zoetone-Demo-Assets/07 DeSalate Highway (Remix) (Synth).mp3",
+      "Zoetone-Demo-Assets/07 DeSalate Highway (Remix) (Vocals).mp3"
     ];
 
     // --- Key Model Dynamic Controls ---
     const defaultKeyModelUrl = "https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MTRMagicKeyTrueOrigin.gltf";
     window.addEventListener('DOMContentLoaded', () => {
+      const demoSongSelect = document.getElementById('demoSongSelect');
       // --- DOM ELEMENTS: declare all at the top so all functions can use them safely ---
+      // --- Demo Song Switcher ---
+      if (demoSongSelect) {
+        demoSongSelect.addEventListener('change', function() {
+          let tracks;
+          if (demoSongSelect.value === 'desolate') {
+            tracks = desolateTracks;
+          } else {
+            tracks = defaultTracks;
+          }
+          // Set all audio elements to new tracks
+          for (let i = 0; i < 6; i++) {
+            const audio = document.getElementById(`lane${i+1}`);
+            if (audio) {
+              audio.src = tracks[i] || '';
+              // Re-apply audioanalyser for each channel
+              const visIds = ['Silver', 'Blue', 'Gold', 'Pink', 'Green', 'White'];
+              const ent = document.getElementById(visIds[i]);
+              if (ent) {
+                ent.setAttribute('audioanalyser', `src: #lane${i+1}; enabled: true`);
+              }
+            }
+          }
+          // Update the UI inputs to reflect new URLs
+          if (window.updateChannels) window.updateChannels();
+        });
+      }
       const keyModelUrlInput = document.getElementById('keyModelUrl');
       const keyModelScaleInput = document.getElementById('keyModelScale');
       const keyModelScaleValue = document.getElementById('keyModelScaleValue');
