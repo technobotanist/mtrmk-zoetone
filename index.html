@@ -35,17 +35,6 @@
 <body>
 
   <div id="channel-controls" style="position: absolute; z-index: 10;  color: #fff; padding: 1em; border-radius: 8px; top: 1em; left: 1em; min-width: 18em;">
-  <div id="rotation-controls" style="position: absolute; z-index: 10; color: #fff; padding: 1em; border-radius: 8px; top: 1em; right: 1em; min-width: 16em; background: rgba(30,30,30,0.7);">
-    <div style="display: flex; align-items: center; justify-content: space-between;">
-      <span style="font-weight: bold;">Camera Orbit</span>
-      <button id="minimizeRotationBtn" style="margin-left: 0.5em; font-size: 1em;">_</button>
-    </div>
-    <div id="orbitControls" style="margin-top: 0.5em;">
-      <label style="display: block; margin-top: 1em;">
-        <input type="checkbox" id="orbitCameraCheckbox"> Enable Random Camera Orbit
-      </label>
-    </div>
-  </div>
     <div style="display: flex; align-items: center; justify-content: space-between;">
       <label style="margin-bottom: 0;">Number of Channels:
         <input type="number" id="channelCount" min="0" max="6" value="6" style="width: 3em;">
@@ -73,6 +62,12 @@
         <label style="display: block;">Y: <input type="range" id="modelRotateY" min="0" max="360" step="0.1" value="125.5" style="width: 8em;"> <span id="modelRotateYValue">125.5</span>°</label>
         <label style="display: block;">Z: <input type="range" id="modelRotateZ" min="0" max="360" step="0.1" value="128" style="width: 8em;"> <span id="modelRotateZValue">128</span>°</label>
       </div>
+      <div id="orbitControls" style="margin-top: 1em; background: rgba(40,40,40,0.5); padding: 0.5em; border-radius: 6px;">
+        <span style="font-weight: bold;">Camera Orbit</span>
+        <label style="display: block; margin-top: 0.5em;">
+          <input type="checkbox" id="orbitCameraCheckbox"> Enable Random Camera Orbit
+        </label>
+      </div>
     </div>
   </div>
 
@@ -80,171 +75,7 @@
     <a-assets id="audio-assets">
       <!-- Audio elements will be injected here by JS -->
     </a-assets>
-    <script>
-    // --- Camera Orbit Controls & Model Controls Robust Fix ---
-    window.addEventListener('DOMContentLoaded', () => {
-      // Camera Orbit
-      const minimizeRotationBtn = document.getElementById('minimizeRotationBtn');
-      const orbitControls = document.getElementById('orbitControls');
-      const orbitCheckbox = document.getElementById('orbitCameraCheckbox');
-      let minimizedRotation = false;
-      let orbitRequest = null;
-      let orbitAngle = 0;
-      let orbitSpeed = 0.005 + Math.random() * 0.01;
-      let orbitRadius = 16 + Math.random() * 6;
-      let orbitHeight = 2 + Math.random() * 2;
-      const rig = document.getElementById('rig');
-      const eyes = document.getElementById('eyes');
-      const zoetone = document.getElementById('zoetonecomplex');
-      // Default camera position
-      const defaultRigPos = {x: 0, y: 0, z: 0};
-      // Helper to get world position of zoetone
-      function getZoetoneWorldPos() {
-        if (!zoetone || !zoetone.object3D) return {x:0,y:0,z:0};
-        const pos = new THREE.Vector3();
-        zoetone.object3D.getWorldPosition(pos);
-        return pos;
-      }
-      function setLookAt() {
-        if (!eyes || !zoetone) return;
-        const zoetonePos = getZoetoneWorldPos();
-        eyes.object3D.lookAt(zoetonePos);
-      }
-      function animateOrbit() {
-        orbitAngle += orbitSpeed;
-        const x = Math.cos(orbitAngle) * orbitRadius;
-        const z = Math.sin(orbitAngle) * orbitRadius;
-        if (rig) rig.setAttribute('position', `${x} ${orbitHeight} ${z}`);
-        setLookAt();
-        if (orbitRequest) orbitRequest = requestAnimationFrame(animateOrbit);
-      }
-      function startOrbit() {
-        if (orbitRequest) return;
-        orbitAngle = Math.random() * Math.PI * 2;
-        orbitSpeed = 0.005 + Math.random() * 0.01;
-        orbitRadius = 16 + Math.random() * 6;
-        orbitHeight = 2 + Math.random() * 2;
-        orbitRequest = requestAnimationFrame(animateOrbit);
-      }
-      function stopOrbit() {
-        if (orbitRequest) {
-          cancelAnimationFrame(orbitRequest);
-          orbitRequest = null;
-        }
-        // Reset camera to default
-        if (rig) rig.setAttribute('position', `${defaultRigPos.x} ${defaultRigPos.y} ${defaultRigPos.z}`);
-        setLookAt();
-      }
-      if (orbitCheckbox) {
-        orbitCheckbox.addEventListener('change', () => {
-          if (orbitCheckbox.checked) {
-            startOrbit();
-          } else {
-            stopOrbit();
-          }
-        });
-      }
-      if (minimizeRotationBtn) {
-        minimizeRotationBtn.addEventListener('click', () => {
-          minimizedRotation = !minimizedRotation;
-          if (orbitControls) orbitControls.style.display = minimizedRotation ? 'none' : '';
-          minimizeRotationBtn.textContent = minimizedRotation ? '▢' : '_';
-        });
-      }
-      window.addEventListener('beforeunload', stopOrbit);
-
-      // --- Model Controls Robustness ---
-      // Re-query all model controls in case of reload/DOM issues
-      const keyModelUrlInput = document.getElementById('keyModelUrl');
-      const keyModelScaleInput = document.getElementById('keyModelScale');
-      const keyModelScaleValue = document.getElementById('keyModelScaleValue');
-      const keyModelFileInput = document.getElementById('keyModelFile');
-      const userKeyAsset = document.getElementById('userkeymodel');
-      const playbuttonkey = document.getElementById('playbuttonkey');
-      const modelRotateX = document.getElementById('modelRotateX');
-      const modelRotateY = document.getElementById('modelRotateY');
-      const modelRotateZ = document.getElementById('modelRotateZ');
-      const modelRotateXValue = document.getElementById('modelRotateXValue');
-      const modelRotateYValue = document.getElementById('modelRotateYValue');
-      const modelRotateZValue = document.getElementById('modelRotateZValue');
-      let currentModelUrl = keyModelUrlInput ? keyModelUrlInput.value : '';
-      let lastFileUrl = null;
-      // Set default values if not already set
-      if (keyModelUrlInput && !keyModelUrlInput.value) keyModelUrlInput.value = userKeyAsset ? userKeyAsset.getAttribute('src') : '';
-      if (keyModelScaleInput) keyModelScaleInput.value = 0.5;
-      if (keyModelScaleValue) keyModelScaleValue.textContent = '0.5';
-      if (modelRotateX) modelRotateX.value = 49.8;
-      if (modelRotateY) modelRotateY.value = 125.5;
-      if (modelRotateZ) modelRotateZ.value = 128;
-      if (modelRotateXValue) modelRotateXValue.textContent = '49.8';
-      if (modelRotateYValue) modelRotateYValue.textContent = '125.5';
-      if (modelRotateZValue) modelRotateZValue.textContent = '128';
-      // Model update functions
-      function updateKeyModel(url, isFile) {
-        if (isFile && lastFileUrl) {
-          URL.revokeObjectURL(lastFileUrl);
-        }
-        if (typeof url !== 'string' || !url.trim()) {
-          url = userKeyAsset ? userKeyAsset.getAttribute('src') : '';
-        }
-        currentModelUrl = url;
-        if (userKeyAsset && url && typeof url === 'string' && url.trim()) {
-          userKeyAsset.setAttribute('src', url);
-          if (playbuttonkey) {
-            playbuttonkey.removeAttribute('gltf-model');
-            setTimeout(() => {
-              playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
-            }, 50);
-          }
-        }
-        if (isFile) lastFileUrl = url;
-      }
-      function updateKeyScale() {
-        if (!playbuttonkey || !keyModelScaleInput || !keyModelScaleValue) return;
-        const userScale = parseFloat(keyModelScaleInput.value) || 0.5;
-        playbuttonkey.setAttribute('scale', `${userScale} ${userScale} ${userScale}`);
-        keyModelScaleValue.textContent = userScale.toFixed(2);
-      }
-      function updateModelRotation() {
-        if (!playbuttonkey || !modelRotateX || !modelRotateY || !modelRotateZ) return;
-        const x = parseFloat(modelRotateX.value) || 0;
-        const y = parseFloat(modelRotateY.value) || 0;
-        const z = parseFloat(modelRotateZ.value) || 0;
-        if (modelRotateXValue) modelRotateXValue.textContent = x;
-        if (modelRotateYValue) modelRotateYValue.textContent = y;
-        if (modelRotateZValue) modelRotateZValue.textContent = z;
-        playbuttonkey.setAttribute('rotation', `${x} ${y} ${z}`);
-      }
-      if (modelRotateX) modelRotateX.addEventListener('input', updateModelRotation);
-      if (modelRotateY) modelRotateY.addEventListener('input', updateModelRotation);
-      if (modelRotateZ) modelRotateZ.addEventListener('input', updateModelRotation);
-      if (keyModelUrlInput) {
-        keyModelUrlInput.addEventListener('change', () => {
-          const url = keyModelUrlInput.value.trim();
-          if (url) {
-            updateKeyModel(url, false);
-          } else if (userKeyAsset) {
-            updateKeyModel(userKeyAsset.getAttribute('src'), false);
-            keyModelUrlInput.value = userKeyAsset.getAttribute('src');
-          }
-        });
-      }
-      if (keyModelScaleInput) keyModelScaleInput.addEventListener('input', updateKeyScale);
-      if (keyModelFileInput) {
-        keyModelFileInput.addEventListener('change', (e) => {
-          const file = e.target.files[0];
-          if (file) {
-            const url = URL.createObjectURL(file);
-            updateKeyModel(url, true);
-          }
-        });
-      }
-      // Initialize model state
-      updateKeyModel(keyModelUrlInput ? keyModelUrlInput.value : '', false);
-      updateKeyScale();
-      updateModelRotation();
-    });
-    </script>
+  
     <script>
     // --- Dynamic Channel UI and Audio Management ---
     const defaultTracks = [
@@ -268,33 +99,33 @@
       const playbuttonkey = document.getElementById('playbuttonkey');
       let currentModelUrl = defaultKeyModelUrl;
       let lastFileUrl = null;
-
       // Set default values
       keyModelUrlInput.value = defaultKeyModelUrl;
       keyModelScaleInput.value = 0.5;
       keyModelScaleValue.textContent = '0.5';
       // Set default model rotation values
+      const modelRotateX = document.getElementById('modelRotateX');
+      const modelRotateY = document.getElementById('modelRotateY');
+      const modelRotateZ = document.getElementById('modelRotateZ');
+      const modelRotateXValue = document.getElementById('modelRotateXValue');
+      const modelRotateYValue = document.getElementById('modelRotateYValue');
+      const modelRotateZValue = document.getElementById('modelRotateZValue');
       modelRotateX.value = 49.8;
       modelRotateY.value = 125.5;
       modelRotateZ.value = 128;
       modelRotateXValue.textContent = '49.8';
       modelRotateYValue.textContent = '125.5';
       modelRotateZValue.textContent = '128';
-
-      // Update asset and entity
       function updateKeyModel(url, isFile) {
-        // Clean up previous file URL if needed
         if (isFile && lastFileUrl) {
           URL.revokeObjectURL(lastFileUrl);
         }
-        // Only set src if url is a non-empty string
         if (typeof url !== 'string' || !url.trim()) {
           url = defaultKeyModelUrl;
         }
         currentModelUrl = url;
         if (url && typeof url === 'string' && url.trim()) {
           userKeyAsset.setAttribute('src', url);
-          // Force reload by removing and re-adding the attribute
           playbuttonkey.removeAttribute('gltf-model');
           setTimeout(() => {
             playbuttonkey.setAttribute('gltf-model', '#userkeymodel');
@@ -303,19 +134,10 @@
         if (isFile) lastFileUrl = url;
       }
       function updateKeyScale() {
-        // Use the slider value directly for scale
         const userScale = parseFloat(keyModelScaleInput.value) || 0.5;
         playbuttonkey.setAttribute('scale', `${userScale} ${userScale} ${userScale}`);
         keyModelScaleValue.textContent = userScale.toFixed(2);
       }
-
-      // --- Model Rotation Controls ---
-      const modelRotateX = document.getElementById('modelRotateX');
-      const modelRotateY = document.getElementById('modelRotateY');
-      const modelRotateZ = document.getElementById('modelRotateZ');
-      const modelRotateXValue = document.getElementById('modelRotateXValue');
-      const modelRotateYValue = document.getElementById('modelRotateYValue');
-      const modelRotateZValue = document.getElementById('modelRotateZValue');
       function updateModelRotation() {
         const x = parseFloat(modelRotateX.value) || 0;
         const y = parseFloat(modelRotateY.value) || 0;
@@ -328,7 +150,6 @@
       modelRotateX.addEventListener('input', updateModelRotation);
       modelRotateY.addEventListener('input', updateModelRotation);
       modelRotateZ.addEventListener('input', updateModelRotation);
-
       keyModelUrlInput.addEventListener('change', () => {
         const url = keyModelUrlInput.value.trim();
         if (url) {
@@ -339,20 +160,59 @@
         }
       });
       keyModelScaleInput.addEventListener('input', updateKeyScale);
-
       keyModelFileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
           const url = URL.createObjectURL(file);
           updateKeyModel(url, true);
-          // Do not clear the input, keep last valid URL in the text box if present
         }
       });
-
       // Initialize
       updateKeyModel(defaultKeyModelUrl, false);
       updateKeyScale();
       updateModelRotation();
+      // --- Camera Orbit ---
+      // Only move the rig, let look-at handle orientation
+      const orbitCheckbox = document.getElementById('orbitCameraCheckbox');
+      let orbitRequest = null;
+      let orbitAngle = 0;
+      let orbitSpeed = 0.005 + Math.random() * 0.01;
+      let orbitRadius = 16 + Math.random() * 6;
+      let orbitHeight = 2 + Math.random() * 2;
+      const rig = document.getElementById('rig');
+      const defaultRigPos = {x: 0, y: 0, z: 0};
+      function animateOrbit() {
+        orbitAngle += orbitSpeed;
+        const x = Math.cos(orbitAngle) * orbitRadius;
+        const z = Math.sin(orbitAngle) * orbitRadius;
+        if (rig) rig.setAttribute('position', `${x} ${orbitHeight} ${z}`);
+        if (orbitRequest) orbitRequest = requestAnimationFrame(animateOrbit);
+      }
+      function startOrbit() {
+        if (orbitRequest) return;
+        orbitAngle = Math.random() * Math.PI * 2;
+        orbitSpeed = 0.005 + Math.random() * 0.01;
+        orbitRadius = 16 + Math.random() * 6;
+        orbitHeight = 2 + Math.random() * 2;
+        orbitRequest = requestAnimationFrame(animateOrbit);
+      }
+      function stopOrbit() {
+        if (orbitRequest) {
+          cancelAnimationFrame(orbitRequest);
+          orbitRequest = null;
+        }
+        if (rig) rig.setAttribute('position', `${defaultRigPos.x} ${defaultRigPos.y} ${defaultRigPos.z}`);
+      }
+      if (orbitCheckbox) {
+        orbitCheckbox.addEventListener('change', () => {
+          if (orbitCheckbox.checked) {
+            startOrbit();
+          } else {
+            stopOrbit();
+          }
+        });
+      }
+      window.addEventListener('beforeunload', stopOrbit);
     });
 
     // Helper: get current track URLs from audio elements (if present)
@@ -535,16 +395,16 @@
 <a-asset-item id="userkeymodel" crossorigin="anonymous" preload="auto" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MTRMagicKeyTrueOrigin.gltf"></a-asset-item>
 <a-asset-item id="whitemagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_WhiteMTRMagicKeyText.glb" preload="auto"></a-asset-item>
 <a-asset-item id="silvermagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_SilverMTRMagicKeyText.glb" preload="auto"></a-asset-item>
-<a-asset-item id="goldmagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_GoldMTRMagicKeyText.glb" preload="auto"></a-asset-item>
-<a-asset-item id="pinkmagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_PinkMTRMagicKeyText.glb" preload="auto"></a-asset-item>
-<a-asset-item id="bluemagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_BlueMTRMagicKeyText.glb" preload="auto"></a-asset-item>
-<a-asset-item id="greenmagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_GreenMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="goldmagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_GoldMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="pinkmagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_PinkMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="bluemagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_BlueMTRMagicKeyText.glb" preload="auto"></a-asset-item>
+<a-asset-item id="greenmagickeytext" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_GreenMTRMagicKeyText.glb" preload="auto"></a-asset-item>
 
 <!-- Text for bottom right corner pop up -->
 <a-asset-item id="messageText" src="message.html"></a-asset-item>
 
 <!--TR Magic Key Brand Fonts -->
-<a-asset-item id="magickeytitlingfont" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MagicKeyTitlingFont.ttf"></a-asset-item>
+<a-asset-item id="magickeytitlingfont" crossorigin="anonymous" src="https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_MagicKeyTitlingFont.ttf"></a-asset-item>
 
  <a-mixin   
           id="splashaway"
@@ -616,15 +476,15 @@
       
     
       <a-entity id="rig" position="0 0 0" rotation="0 0 0" >
-    <a-entity id="eyes"
-              camera="fov: 80"
-              look-controls="enabled:  false;  mouseEnabled:  false"
-              position=""
-              rotation=""
-              raycaster="objects: .mouse; direction: -24 -3 0;" cursor="rayOrigin: mouse"
-              static-body="shape: sphere; sphereRadius: 0.001">
-      </a-entity>
-    </a-entity>  
+        <a-entity id="eyes"
+          camera="fov: 80"
+          look-at="#zoetonecomplex"
+          position=""
+          rotation=""
+          raycaster="objects: .mouse; direction: -24 -3 0;" cursor="rayOrigin: mouse"
+          static-body="shape: sphere; sphereRadius: 0.001">
+        </a-entity>
+      </a-entity>  
       
       <a-entity id="responsivetext">
       <a-entity id="whitemagickey"
@@ -703,7 +563,7 @@ MTR Magic Key
 Raleigh, NC; 
                        align: center; 
                        color: #f9dea2; 
-                       font: https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-a311-ae093a717da9_MagicKeyTitlingFont.ttf; 
+                       font: https://raw.githubusercontent.com/technobotanist/mtrmk-zoetone/main/Zoetone-Demo-Assets/b0549471-c315-468a-ae093a717da9_MagicKeyTitlingFont.ttf; 
                        fontSize: 3; fillOpacity:  0.5;  
                        outlineBlur:  0.34;  outlineColor:  #8c8c8c;  outlineOpacity:  0.64;  outlineWidth:  0.02;  
                        strokeColor:  #f9dea2;  strokeOpacity:  4.01;  strokeWidth:  0.05"
